@@ -10,22 +10,22 @@
 	<url>https://github.com/klout/github-maven-example</url>
 
 	<issueManagement>
-		<url>https://github.com/klout/github-maven-example/issues</url>
+		<url>https://github.com/klout/brickhouse/issues</url>
 		<system>GitHub Issues</system>
 	</issueManagement>
 
 	<licenses>
 		<license>
-			<name>Apache License</name>
-			<url>http://www.opensource.org/licenses/mit-license.php</url>
+			<name>Apache License 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
 
 	<scm>
-		<url>https://github.com/klout/github-maven-example</url>
-		<connection>scm:git:git://github.com/klout/github-maven-example.git</connection>
-		<developerConnection>scm:git:git@github.com:klout/github-maven-example.git</developerConnection>
+		<url>https://github.com/klout/brickhouse</url>
+		<connection>scm:git:git://github.com/klout/brickhouse.git</connection>
+		<developerConnection>scm:git:git@github.com:klout/brickhouse.git</developerConnection>
 	</scm>
 
 	<developers>
