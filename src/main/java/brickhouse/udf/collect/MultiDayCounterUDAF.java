@@ -1,18 +1,20 @@
 package brickhouse.udf.collect;
-
 /**
- * Count and count uniques for several day periods 
- *  ( i.e produce 1, 7 and 30 counts for various events)
- *  <p>Input is a YYYYMMDD representation of the date counts are being generated,
- *   a date representation of the date associated with the events,
- *   a bigint of the event count for that day period,
- *   an array of uniques for that count (or a sketch set for those uniques),
- *   and an array of ints representing the dates being counted over ( ie. [1,7,30] ).
- *   </p>
- *   
- *  <p>Output is a array of structs containing the num of days counted, the sum of events
- *     over that date
- */
+ * Copyright 2012 Klout, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ **/
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,10 +30,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.UnionObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
@@ -42,6 +41,21 @@ import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+
+/**
+ * Count and count uniques for several day periods 
+ *  ( i.e produce 1, 7 and 30 counts for various events)
+ *  <p>Input is a YYYYMMDD representation of the date counts are being generated,
+ *   a date representation of the date associated with the events,
+ *   a bigint of the event count for that day period,
+ *   an array of uniques for that count (or a sketch set for those uniques),
+ *   and an array of ints representing the dates being counted over ( ie. [1,7,30] ).
+ *   </p>
+ *   
+ *  <p>Output is a array of structs containing the num of days counted, the sum of events
+ *     over that date
+ */
+
 
 @Description(name="multiday_count",
 value = "_FUNC_(x) - Returns a count of events over several different periods," 
@@ -55,8 +69,6 @@ public class MultiDayCounterUDAF extends AbstractGenericUDAFResolver {
 	 * 
 	 */
 	@Override
-	   //// XXX TODO ... allow raw events to be aggregated, not just pre-aggregated events ...
-	   //// XXX TODO implement a different evaluator which just takes in events, and a timestamp 
 	public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
 			throws SemanticException {
 		for(int i=0; i<parameters.length; ++i) {
