@@ -35,11 +35,11 @@ import java.util.Map;
  */
 @Description(
  name = "write_to_graphite",
- value =  "  \n " +
+ value =  "  \n Writes metric or collection of metrics to graphite." +
           "_FUNC_(String hostname, int port, Map<String, Double> nameToValue, Long timestampInSeconds) \n" +
           "_FUNC_(String hostname, int port, Map<String, Double> nameToValue) \n" +
-          "_FUNC_(String hostname, int port, String metricName, Double metricVaule, String tags, Long timestampInSeconds) \n" +
-          "_FUNC_(String hostname, int port, String metricName, Double metricVaule, String tags) \n"
+          "_FUNC_(String hostname, int port, String metricName, Double metricVaule, Long timestampInSeconds) \n" +
+          "_FUNC_(String hostname, int port, String metricName, Double metricVaule) \n"
 )
 public class WriteToGraphiteUDF extends UDF {
   GraphiteWriter writer_ = new GraphiteWriter();
