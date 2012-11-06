@@ -17,6 +17,9 @@ package brickhouse.analytics.uniques;
  **/
 
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -91,12 +94,18 @@ public class SketchSet implements ICountDistinct {
 			return sortedMap.size();
 		}
 		long maxHash = sortedMap.lastKey();
-		///BigInteger maxBig = BigInteger.valueOf(maxHash).add(MAX_LONG);
-		double ratio = ((double)maxItems)/((double)(maxHash + Long.MAX_VALUE));
+		///double maxHashShifted = (double)( (double)maxHash + (double)Long.MAX_VALUE );
 		
-		double est = ratio*((double)Long.MAX_VALUE)*2.0;
+		///double ratio = ((double)maxItems)/maxHashShifted;
+		///double est = ratio*((double)Long.MAX_VALUE)*2.0;
+		///return est;
 		
-		return est;
+		BigDecimal maxHashShifted = new BigDecimal(BigInteger.valueOf( maxHash).add( BigInteger.valueOf( Long.MAX_VALUE)));
+	
+		BigDecimal bigMaxItems = new BigDecimal( maxItems*2).multiply( BigDecimal.valueOf( Long.MAX_VALUE));
+		BigDecimal ratio = bigMaxItems.divide(maxHashShifted, RoundingMode.HALF_EVEN);
+		return ratio.doubleValue();
+		
 	}
 	
 	
