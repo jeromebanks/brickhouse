@@ -6,7 +6,7 @@ CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
 CREATE TEMPORARY FUNCTION cast_array AS 'brickhouse.udf.collect.CastArrayUDF';
 CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastArrayUDF';
-CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDAF';
+CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDF';
 CREATE TEMPORARY FUNCTION combine_unique AS 'brickhouse.udf.collect.CombineUniqueUDAF';
 CREATE TEMPORARY FUNCTION conditional_emit AS 'brickhouse.udf.collect.ConditionalEmit';
 CREATE TEMPORARY FUNCTION join_array AS 'brickhouse.udf.collect.JoinArrayUDF';
@@ -35,7 +35,6 @@ CREATE TEMPORARY FUNCTION combine_previous_sketch AS 'brickhouse.udf.sketch.Comb
 CREATE TEMPORARY FUNCTION combine_sketch AS 'brickhouse.udf.sketch.CombineSketchUDF';
 CREATE TEMPORARY FUNCTION convert_to_sketch AS 'brickhouse.udf.sketch.ConvertToSketchUDF';
 CREATE TEMPORARY FUNCTION estimated_reach AS 'brickhouse.udf.sketch.EstimatedReachUDF';
-CREATE TEMPORARY FUNCTION estimated_reach AS 'brickhouse.udf.sketch.EstimatedReachUDF';
 CREATE TEMPORARY FUNCTION md5 AS 'brickhouse.udf.sketch.Md5';
 CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF';
 CREATE TEMPORARY FUNCTION union_sketch AS 'brickhouse.udf.sketch.UnionSketchSetUDAF';
@@ -57,16 +56,10 @@ CREATE TEMPORARY FUNCTION bloom_not AS 'brickhouse.udf.bloom.BloomNotUDF';
 CREATE TEMPORARY FUNCTION add_days AS 'brickhouse.udf.date.AddDaysUDF';
 CREATE TEMPORARY FUNCTION date_range AS 'brickhouse.udf.date.DateRangeUDTF';
 
-CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF;
-CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF;
-CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF;
-CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF;
-
-
-
-CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
-CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF';
+CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
+CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
+CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
 
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
