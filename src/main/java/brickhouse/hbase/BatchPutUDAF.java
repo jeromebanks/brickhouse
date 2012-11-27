@@ -114,6 +114,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 	public static class BatchPutUDAFEvaluator extends GenericUDAFEvaluator {
 		private int batchSize = 10000;
 		private int numPutRecords = 0;/// XXX TODO Count 
+		private String zookeeperQuorum;
 		
 		// For PARTIAL1 and COMPLETE: ObjectInspectors for original data
 		private StringObjectInspector inputKeyOI;
@@ -130,7 +131,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			if(table == null) {
 				/// XXX why isn't zookeeper quorum set ???
 				/// XXX How to get 
-			   config.set("hbase.zookeeper.quorum", "jobs-dev-zoo1,jobs-dev-zoo2,jobs-dev-zoo3");
+				if( zookeeperQuorum != null )
+			       config.set("hbase.zookeeper.quorum", zookeeperQuorum);
 		       table =   new HTable( HBaseConfiguration.create(config), tablename);
 				table.setAutoFlush(false);
 			}
@@ -166,6 +168,15 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 					Object batchObj = constInspector.getWritableConstantValue();
 					batchSize = Integer.valueOf(batchObj.toString());
 				}
+				if( parameters.length == 5) {
+					if(!( parameters[4] instanceof ConstantObjectInspector) ) {
+						throw new HiveException("Zookeeper quorum must be a constant");
+					}
+					ConstantObjectInspector constInspector = (ConstantObjectInspector) parameters[4];
+					Object constObj = constInspector.getWritableConstantValue();
+					zookeeperQuorum = constObj.toString();
+				}
+				
 			} else {
 				///  input will be our List of lists
 				listKVOI = (StandardListObjectInspector) parameters[0];
