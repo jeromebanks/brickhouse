@@ -63,7 +63,7 @@ public class SketchSetTest {
 	}
 
 	
-	@Test
+	///@Test
 	public void testManyRandomHashes() {
 		double maxDiff = 0;
 		double totDiff = 0;
