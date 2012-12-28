@@ -70,10 +70,10 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		String strTypeName = PrimitiveObjectInspectorUtils.getTypeNameFromPrimitiveJava(String.class);
 		String intTypeName = PrimitiveObjectInspectorUtils.getTypeNameFromPrimitiveJava(Integer.class);
 		
-		if (parameters.length != 3 && parameters.length != 4) {
-					LOG.warn(" param length not right; Expecting hbase_batch_put( string tablename, string key, string val, <optional> batch size)");
-			///throw new UDFArgumentTypeException(parameters.length - 1,
-					///"Expecting hbase_batch_put( string tablename, string key, string val, <optional> batch size)");
+		if (parameters.length != 3 && parameters.length != 4 && parameters.length != 5) {
+					LOG.warn(" param length not right; Expecting hbase_batch_put( string tablename, string key, string val, <optional> batch size, zookeeperQuorum)");
+			throw new SemanticException(
+					"Expecting hbase_batch_put( string tablename, string key, string val, <optional> batch size, zookeeperQuorum)");
 		}
 		
 		if( !parameters[0 ].getTypeName().equals(strTypeName) 
@@ -97,6 +97,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 	
 	static public class PutBuffer implements AggregationBuffer{
 		public String tableName;
+		public String zookeeperQuorum;
 		public List<Put> putList;
 		
 		public PutBuffer(String tablename) { tableName = tablename; }
@@ -127,12 +128,12 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		private HTable table;
 
 
-		private HTable initHTable(String tablename) throws IOException {
+		private HTable initHTable(String tablename, String zookeeperQuorum) throws IOException {
 			if(table == null) {
-				/// XXX why isn't zookeeper quorum set ???
-				/// XXX How to get 
-				if( zookeeperQuorum != null )
+				if( zookeeperQuorum != null ) {
+					LOG.info("Setting hbase.zookeeper.quorum to " + zookeeperQuorum);
 			       config.set("hbase.zookeeper.quorum", zookeeperQuorum);
+				}
 		       table =   new HTable( HBaseConfiguration.create(config), tablename);
 				table.setAutoFlush(false);
 			}
@@ -144,31 +145,32 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			super.init(m, parameters);
 			// init output object inspectors
 			///  input will be key, value and batch size
-			if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
+			LOG.info(" Init mode = " + m );
+	        for( int k=0; k< parameters.length; ++k)		
+	        	LOG.info( "Param " + k + " is " + parameters[k]);
+	        
+			if (m == Mode.PARTIAL1 || m == Mode.COMPLETE ) {
 				if( ! ( parameters[0] instanceof ConstantObjectInspector)) {
 				   throw new HiveException("Tablename must be a constant");
 				}
 				tablename = ((ConstantObjectInspector) parameters[0]).getWritableConstantValue().toString();
-				try {
-					initHTable(tablename);
-				} catch (IOException e) {
-					throw new HiveException(e);
-				}
+				LOG.info("Setting tablename to " + tablename);
 				
 				
 				inputKeyOI = (StringObjectInspector) parameters[1];
 				inputValOI = (StringObjectInspector) parameters[2];
 				
 				
-				if( parameters.length == 4) {
+				if( parameters.length >= 4) {
 					if(!( parameters[3] instanceof ConstantObjectInspector) ) {
 						throw new HiveException("Batch size must be a constant");
 					}
 					ConstantObjectInspector constInspector = (ConstantObjectInspector) parameters[3];
 					Object batchObj = constInspector.getWritableConstantValue();
+					LOG.info(" Setting batch size to " + batchObj);
 					batchSize = Integer.valueOf(batchObj.toString());
 				}
-				if( parameters.length == 5) {
+				if( parameters.length >= 5) {
 					if(!( parameters[4] instanceof ConstantObjectInspector) ) {
 						throw new HiveException("Zookeeper quorum must be a constant");
 					}
@@ -177,6 +179,13 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 					zookeeperQuorum = constObj.toString();
 				}
 				
+				
+				try {
+					LOG.info(" Initializing HTable ");
+					initHTable(tablename, zookeeperQuorum);
+				} catch (IOException e) {
+					throw new HiveException(e);
+				}
 			} else {
 				///  input will be our List of lists
 				listKVOI = (StandardListObjectInspector) parameters[0];
@@ -197,6 +206,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		@Override
 		public AggregationBuffer getNewAggregationBuffer() throws HiveException {
 			PutBuffer buff= new PutBuffer( tablename);
+			buff.zookeeperQuorum = zookeeperQuorum;
 			reset(buff);
 			return buff;
 		}
@@ -217,10 +227,12 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		
 		protected void batchUpdate( PutBuffer  kvBuff) throws HiveException { 
 			try {
-				HTable htable = initHTable( kvBuff.tableName);
+				HTable htable = initHTable( kvBuff.tableName, kvBuff.zookeeperQuorum);
 				
 				htable.put( kvBuff.putList);
 				htable.flushCommits();
+				numPutRecords += kvBuff.putList.size();
+				kvBuff.putList.clear();
 				
 			} catch (IOException e) {
 				throw new HiveException(e);
@@ -237,8 +249,10 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			List first = subListOI.getList( partialResult.get(0));
 			String tableName = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(first.get(0));
 			myagg.tableName = tableName;
+			String zookeeper = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(first.get(1));
+			myagg.zookeeperQuorum = zookeeper;
 			
-			for(int i=1; i< partialResult.size(); ++i) {
+			for(int i=2; i< partialResult.size(); ++i) {
 				
 			   List kvList = subListOI.getList( partialResult.get(i));
 			   String key = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(kvList.get(0));
@@ -263,7 +277,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		public Object terminate(AggregationBuffer agg) throws HiveException {
 			PutBuffer myagg = (PutBuffer) agg;
 			batchUpdate( myagg);
-			return "Finished Batch updates " ; /// XXX TODO -count how many updated
+			return "Finished Batch updates ; Num Puts = " + numPutRecords ; /// XXX TODO -count how many updated
 
 		}
 
@@ -275,7 +289,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			
 			ArrayList<List<String>> ret = new ArrayList<List<String>>();
 			ArrayList tname = new ArrayList<String>();
-			tname.add( tablename);
+			tname.add( myagg.tableName);
+			tname.add( myagg.zookeeperQuorum);
 			ret.add( tname);
 			
 			for(Put thePut : myagg.putList) {
