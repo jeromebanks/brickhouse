@@ -1,5 +1,35 @@
 package brickhouse.udf.timeseries;
+/**
 
+ * Copyright 2012 Klout, Inc
+
+ *
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+
+ * you may not use this file except in compliance with the License.
+
+ * You may obtain a copy of the License at
+
+ *
+
+ *    http://www.apache.org/licenses/LICENSE-2.0
+
+ *
+
+ * Unless required by applicable law or agreed to in writing, software
+
+ * distributed under the License is distributed on an "AS IS" BASIS,
+
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+ * See the License for the specific language governing permissions and
+
+ * limitations under the License.
+
+ *
+
+ **/
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +47,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.log4j.Logger;
 
 /**
- * Moving standard deviation of a timeseries array of data
+ * Moving standard deviation of a time series array of data
  *
  */
 @Description(
@@ -98,9 +128,22 @@ public class MovingStdevUDF extends GenericUDF {
     @Override
     public ObjectInspector initialize(ObjectInspector[] arg0)
             throws UDFArgumentException {
+        if(arg0.length != 1 && arg0.length != 2){
+            throw new UDFArgumentException(" MovingStdevUDF takes 2 arguments, array<string>, string");
+        }
+
+
         this.listInspector = (ListObjectInspector) arg0[0];
+
+        if (this.listInspector.getCategory() != ObjectInspector.Category.LIST) {
+            throw new UDFArgumentException(" MovingStdevUDF takes an array as first argument");
+        }
         this.dayWindowInspector = (IntObjectInspector)arg0[1];
-        LOG.info( "Moving Average Object input type is " + listInspector + " element = " + listInspector.getListElementObjectInspector());
+
+        if (this.dayWindowInspector.getCategory() != ObjectInspector.Category.PRIMITIVE) {
+            throw new UDFArgumentException(" MovingStdevUDF takes a numeric string as second argument");
+        }
+        LOG.info( "Moving Standard Deviation Object input type is " + listInspector + " element = " + listInspector.getListElementObjectInspector());
 
         return ObjectInspectorFactory.getStandardListObjectInspector(
                 PrimitiveObjectInspectorFactory.javaDoubleObjectInspector );
