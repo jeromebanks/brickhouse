@@ -84,7 +84,7 @@ public class MovingAvgUDF extends GenericUDF {
 			    mvnAvgTimeSeries.add(mvnAvg);
 			} else {
 				if( i >0 ) {  ///smooth out according to number of days for less than day window
-			      double mvnAvg = mvnTotal/((double)i);
+			      double mvnAvg = mvnTotal/((double)i + 1.0);
 			      mvnAvgTimeSeries.add( mvnAvg);
 				}  else {
 					mvnAvgTimeSeries.add( mvnTotal); /// 
