@@ -47,7 +47,6 @@ CREATE TEMPORARY FUNCTION vector_mult AS 'brickhouse.udf.timeseries.VectorMultUD
 
 CREATE TEMPORARY FUNCTION bloom AS 'brickhouse.udf.bloom.BloomUDAF';
 CREATE TEMPORARY FUNCTION distributed_bloom AS 'brickhouse.udf.bloom.DistributedBloomUDF';
-CREATE TEMPORARY FUNCTION merge_bloom AS 'brickhouse.udf.bloom.MergeBloomUDF';
 CREATE TEMPORARY FUNCTION bloom_contains AS 'brickhouse.udf.bloom.BloomContainsUDF';
 CREATE TEMPORARY FUNCTION bloom_and AS 'brickhouse.udf.bloom.BloomAndUDF';
 CREATE TEMPORARY FUNCTION bloom_or AS 'brickhouse.udf.bloom.BloomOrUDF';
