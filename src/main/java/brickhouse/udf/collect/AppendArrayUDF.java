@@ -30,6 +30,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspe
 /**
  *  Append an object to the end of an Array
  *
+ * XXX Fix possible ObjectInspector problems
  */
 public class AppendArrayUDF extends GenericUDF {
 	private ListObjectInspector listInspector;
@@ -57,7 +58,7 @@ public class AppendArrayUDF extends GenericUDF {
 		if( ((ObjectInspector)arg0[0]).getCategory() != Category.LIST ) {
 			throw new UDFArgumentException("append_array expects a list as the first argument");
 		}
-		if( ((ObjectInspector)arg0[0]).getCategory() != Category.PRIMITIVE ) {
+		if( ((ObjectInspector)arg0[1]).getCategory() != Category.PRIMITIVE ) {
 			throw new UDFArgumentException("append_array expects a primitive as the second argument");
 		}
 		listInspector = (ListObjectInspector) arg0[0];
