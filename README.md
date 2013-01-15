@@ -26,14 +26,14 @@ Welcome to the Brickhouse
      
 Requirements:
 --------------
-  Brickhouse require Hive 0.9.0 or later
-  Maven 2.0 and a Java JDK 6.0  is required to build.
+  Brickhouse require Hive 0.9.0 or later;
+  Maven 2.0 and a Java JDK is required to build.
 
 Getting Started
 ---------------
  1. Clone ( or fork ) the repo from  https://github.com/klout/brickhouse 
  2. Run "mvn package" from the command line.
- 3. Add the jar "target/brickhouse-<version>.jar" to your HIVE_AUX_JARS_FILE_PATH,
+ 3. Add the jar "target/brickhouse-\<version number\>.jar" to your HIVE_AUX_JARS_FILE_PATH,
     or add it to the distributed cache from the Hive CLI 
     with the "add jar" command
  4. Source the UDF declarations defined in src/main/resource/brickhouse.hql
