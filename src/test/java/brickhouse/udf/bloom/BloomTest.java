@@ -14,7 +14,7 @@ import org.junit.Test;
 public class BloomTest {
 
 	
-	@Test
+	///@Test
 	public void testBloom() {
 		
 		int numElems = 10*1000000;
