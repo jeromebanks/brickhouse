@@ -8,20 +8,20 @@ Welcome to the Brickhouse
   Brickhouse covers a wide range of functionality, grouped in the 
      following packages.
 
-    * _collect_ - An implementaion of "collect"  and various utilities
-      for dealing with maps and arrays.
+ * _collect_ - An implementaion of "collect"  and various utilities
+     for dealing with maps and arrays.
    
-    * _json_ - Translate between Hive structures and JSON strings
+ * _json_ - Translate between Hive structures and JSON strings
 
-    * _sketch_ - An implementation of KMV sketch sets, for reach 
+ * _sketch_ - An implementation of KMV sketch sets, for reach 
      estimation of large datasets.
 
-    * _bloom_ - UDF wrappers around the Hadoop BloomFilter implementation.
+ * _bloom_ - UDF wrappers around the Hadoop BloomFilter implementation.
 
-    * _sanity_ - Tools for implementing sanity checks and managing Hive
+ * _sanity_ - Tools for implementing sanity checks and managing Hive
 	  in a production environment.
    
-    * _hbase_ - Experimental UDFs for an alternative way to integrate
+ * _hbase_ - Experimental UDFs for an alternative way to integrate
 	  Hive with HBase.
      
 Requirements:
