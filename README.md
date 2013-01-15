@@ -8,23 +8,24 @@ Welcome to the Brickhouse
   Brickhouse covers a wide range of functionality, grouped in the 
      following packages.
 
-    "collect" - An implementaion of "collect"  and various utilities
+    * _collect_ - An implementaion of "collect"  and various utilities
       for dealing with maps and arrays.
    
-    "json" - Translate between Hive structures and JSON strings
+    * _json_ - Translate between Hive structures and JSON strings
 
-    "sketch" - An implementation of KMV sketch sets, for reach 
+    * _sketch_ - An implementation of KMV sketch sets, for reach 
      estimation of large datasets.
 
-    "bloom" - UDF wrappers around the Hadoop BloomFilter implementation.
+    * _bloom_ - UDF wrappers around the Hadoop BloomFilter implementation.
 
-    "sanity" - Tools for implementing sanity checks and managing Hive
+    * _sanity_ - Tools for implementing sanity checks and managing Hive
 	  in a production environment.
    
-    "hbase" - Experimental UDFs for an alternative way to integrate
+    * _hbase_ - Experimental UDFs for an alternative way to integrate
 	  Hive with HBase.
      
 Requirements:
+--------------
   Brickhouse require Hive 0.9.0 or later
   Maven 2.0 and a Java JDK 6.0  is required to build.
 
