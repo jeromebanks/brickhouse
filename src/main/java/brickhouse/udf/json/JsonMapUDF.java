@@ -34,7 +34,8 @@ import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
- *  Given a JSON String , return a map of key-value pairs 
+ *  Given a JSON String containing a map with values of all the same type,
+ *    return a Hive map of key-value pairs 
  *
  */
 
