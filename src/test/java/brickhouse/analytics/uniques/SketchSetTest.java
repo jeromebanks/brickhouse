@@ -1,13 +1,21 @@
 package brickhouse.analytics.uniques;
 
-import static org.junit.Assert.*;
-
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import brickhouse.udf.sketch.SetSimilarityUDF;
+
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 public class SketchSetTest {
 
@@ -36,6 +44,59 @@ public class SketchSetTest {
 		double card = ss.estimateReach();
 		Assert.assertEquals( 4.0, card, 0.0);
 	}
+	
+	@Test
+	public void testDupSketchSetOver5000() {
+		SketchSet ss = new SketchSet();
+		int numHashes = (int) ( 5000 + Math.random()*1024*4);
+		long minHash = Long.MAX_VALUE;
+		for( int i=0; i<numHashes; ++i ) {
+			double randHash = Math.random()*((double)Long.MAX_VALUE);
+			if(Math.random() < 0.5) {
+				randHash = -1*randHash;
+			}
+			if( randHash < minHash)
+				minHash = (long)randHash;
+			ss.addHash((long)randHash);
+		}
+		double ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.9 && ratio < 1.1);
+		
+		
+		ss.addHash( minHash -1 );
+		numHashes++;
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
+
+		ss.addHash( minHash -1 );
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
+
+		ss.addHash( minHash -2 );
+		numHashes++;
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
+
+		ss.addHash( minHash -2 );
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
+		
+		
+		long lastHash = ss.lastHash();
+		ss.addHash( lastHash - 1);
+		numHashes++;
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
+		
+	}
+
+
 
 	@Test
 	public void testRandomHashes() {
@@ -250,6 +311,76 @@ public class SketchSetTest {
 		
 	}
 
+	@Test
+	public void testObama() throws IOException {
+		SketchSet ss = new SketchSet();
+		SketchSet ss2 = new SketchSet();
+		
+		HashFunction md5 = Hashing.md5();
+		
+		System.out.println(" Directory is " + System.getProperty("user.dir"));
+		FileInputStream fs = new FileInputStream("src/test/resources/obama.txt");
+		int cnt =0;
+		BufferedReader reader = new BufferedReader( new InputStreamReader(fs ));
+		String line;
+		while( (line = reader.readLine() ) != null) {
+			ss.addItem( line);
+			ss2.addHashItem(  md5.hashString( line).asLong(), line );
+			cnt++;
+		}
+		
+		System.out.println(" Estimated Reach = " + ss.estimateReach() + " count = " + cnt);
+		double diff = cnt - ss.estimateReach();
+		double pctDiff = Math.abs( diff/(double)cnt);
+		System.out.println( " Difference is " + pctDiff);
+		
+		Assert.assertTrue( pctDiff < 0.03);
+		
+		System.out.println(" Estimated Reach = " + ss2.estimateReach() + " count = " + cnt);
+		 diff = cnt - ss2.estimateReach();
+		 pctDiff = Math.abs( diff/(double)cnt);
+		System.out.println( " Difference is " + pctDiff);
+		
+		Assert.assertTrue( pctDiff < 0.03);
+		
+		SortedMap<Long,String> hashItemMap = ss.getHashItemMap();
+		System.out.println( " First Key is " +  hashItemMap.firstKey() );
+		System.out.println( " Last Key is " +  hashItemMap.lastKey() );
+	}
+	
+	@Test 
+	public void testSetSimilarity() {
+		int numHashes = 200000;
+		List<String> a = new ArrayList<String>();
+		List<String> b = new ArrayList<String>();
+		List<String> c = new ArrayList<String>();
+		
+		for(int i=0; i<numHashes; ++i) {
+			UUID randomUUID = UUID.randomUUID();
+			///System.out.println(" RandomUUID " + randomUUID.toString());
+			a.add( randomUUID.toString());
+			b.add( randomUUID.toString());
+			c.add( randomUUID.toString());
+		}
+		SetSimilarityUDF simUDF = new SetSimilarityUDF();
+		
+		double same = simUDF.evaluate(a, a);
+		System.out.println( "Similarity with self = " + same);
+		Assert.assertEquals( 1.0, same, 0);
+		
+		double diff = simUDF.evaluate(a, b);
+		System.out.println( "Similarity with different  = " + diff);
+		Assert.assertEquals( 0, diff , 0.01); /// Might not be quite zero
+		
+		a.addAll( c);
+		b.addAll( c);
+		
+		double mixed = simUDF.evaluate( a, b);
+		System.out.println("Similarity with mixed = " +mixed);
+		//// Should be about half
+		Assert.assertEquals( 0.5, mixed, 0.01);
+		
+	}
 
 
 
