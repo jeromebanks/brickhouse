@@ -359,7 +359,9 @@ public class SketchSetTest {
 			UUID randomUUID = UUID.randomUUID();
 			///System.out.println(" RandomUUID " + randomUUID.toString());
 			a.add( randomUUID.toString());
+			randomUUID = UUID.randomUUID();
 			b.add( randomUUID.toString());
+			randomUUID = UUID.randomUUID();
 			c.add( randomUUID.toString());
 		}
 		SetSimilarityUDF simUDF = new SetSimilarityUDF();
@@ -370,15 +372,15 @@ public class SketchSetTest {
 		
 		double diff = simUDF.evaluate(a, b);
 		System.out.println( "Similarity with different  = " + diff);
-		Assert.assertEquals( 0, diff , 0.01); /// Might not be quite zero
+		Assert.assertEquals( 0, diff , 0.03); /// Might not be quite zero
 		
 		a.addAll( c);
 		b.addAll( c);
 		
 		double mixed = simUDF.evaluate( a, b);
 		System.out.println("Similarity with mixed = " +mixed);
-		//// Should be about half
-		Assert.assertEquals( 0.5, mixed, 0.01);
+		//// Should be about a third
+		Assert.assertEquals( 0.333333333, mixed, 0.01);
 		
 	}
 
