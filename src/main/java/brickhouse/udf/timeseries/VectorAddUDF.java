@@ -1,4 +1,21 @@
 package brickhouse.udf.timeseries;
+/**
+ * Copyright 2012 Klout, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ **/
+
 
 import java.util.List;
 
@@ -55,7 +72,7 @@ public class VectorAddUDF extends GenericUDF {
 		if( vec1.size() != vec2.size() ) {
 			throw new HiveException(" Vector Add - vectors need to be the same length.");
 		}
-		List valList = (List) retInspector.create( vec1.size() );
+		List valList = (List) retInspector.create(0);
 		for(int i=0; i< vec1.size(); ++i) {
 			
 			double val1 = getVectorDouble( vec1Inspector, vec1.get(i));

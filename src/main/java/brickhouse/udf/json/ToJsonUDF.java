@@ -41,11 +41,23 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 
 /**
- *  Generate a JSON string from a Map
+ *  Generate a JSON string from an arbitrary Hive structure.
+ *   Use the struct() method to generate arbitrary JSON maps.
+ *   
+ *   <p>For example,
+ *   
+ *   to_json( struct("name":"Bob",
+ *                 "value",23.0, 
+ *                 "color_list",array( "red", "yellow", "green" ),
+ *                 "inner_map", map( "a", 1, "b", 2, "c" 3) ) )
+ *      = '{ "name":"Bob", "value":23.0,
+ *            "color_list":[ "red", "yellow", "green" ],
+ *            "inner_map":{ "a":1, "b":2, "c":3 } }' 
+ *              
  *
  */
 @Description(name="to_json",
-    value = "_FUNC_(a,b) - Returns a JSON string from a Map of values"
+    value = "_FUNC_(a,b) - Returns a JSON string from an arbitrary Hive structure."
 )
 public class ToJsonUDF extends GenericUDF {
 	private InspectorHandle inspHandle;

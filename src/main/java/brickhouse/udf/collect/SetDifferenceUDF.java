@@ -16,9 +16,6 @@ package brickhouse.udf.collect;
  *
  **/
 
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +28,14 @@ import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector;
 
 /**
- *   UDF for the set difference of two arrays or maps ...
+ *   UDF for the set difference of two arrays or maps.
  *
  */
 
@@ -43,39 +44,57 @@ value = "_FUNC_(a,b) - Returns a list of those items in a, but not in b "
 )
 public class SetDifferenceUDF extends GenericUDF {
 	private Category category;
-	private ListObjectInspector listInspector;
-	private MapObjectInspector mapInspector;
+	private ListObjectInspector list1Inspector;
+	private ListObjectInspector list2Inspector;
+	private MapObjectInspector map1Inspector;
+	private MapObjectInspector map2Inspector;
+	private PrimitiveObjectInspector prim1Inspector;
+	private PrimitiveObjectInspector prim2Inspector;
+	private StandardListObjectInspector stdListInspector;
+	private StandardMapObjectInspector stdMapInspector;
 
 	public List evaluate( List l1, List l2 ) {
 		    if( l1 == null ) {
-		    	return new ArrayList();
+		    	return null;
 		    }
 		    //// Use a HashSet to avoid linear lookups , for large lists 
 			HashSet negSet = new HashSet();
 			if(l2 != null) {
-			  negSet.addAll( l2);
-			} else {
-				return l1;
+				for( Object lObj : l2) {
+					Object inspObj = prim2Inspector.getPrimitiveJavaObject( lObj);
+					negSet.add( inspObj);
+				}
 			}
-			ArrayList newList = new ArrayList();
+			List newList =  (List) stdListInspector.create(0);
 			for( Object obj: l1) {
-				if( ! negSet.contains( obj)) {
-					newList.add( obj);
+				Object inspObj = prim1Inspector.getPrimitiveJavaObject(obj);
+				if( ! negSet.contains( inspObj )) {
+					newList.add( inspObj);
 				}
 			}
 			return newList;
 	}
 	
 	public Map evaluate( Map m1, Map m2) {
-		HashMap newMap = new HashMap();
-		if( m1 != null && m1.size() > 0)
+		Map newMap = (Map) stdMapInspector.create();
+		if( m1 == null) {
+			return null;
+		}
+		HashSet negSet = new HashSet();
+		if( m2 != null ) {
+		  for( Object mObj : m2.keySet()) {
+			Object inspObj = prim2Inspector.getPrimitiveJavaObject( mObj);
+			negSet.add( inspObj);
+		  }
+		}
+		
+		if(  m1.size() > 0)
 			for(Object k : m1.keySet()) {
-				if( m2 != null ) {
-					if( !m2.containsKey(k)) {
-						newMap.put(k,  m1.get(k));
-					}
-				} else {
-				    newMap.put( k, m1.get(k));
+				Object inspObj = prim1Inspector.getPrimitiveJavaObject(k);
+				if( !negSet.contains(inspObj)) {
+				   Object valObj = m1.get( k);
+				   Object stdVal = ObjectInspectorUtils.copyToStandardObject( valObj, map1Inspector.getMapValueObjectInspector());
+				   newMap.put(inspObj, stdVal);
 				}
 			}
 		return newMap;
@@ -84,17 +103,15 @@ public class SetDifferenceUDF extends GenericUDF {
 	@Override
 	public Object evaluate(DeferredObject[] args) throws HiveException {
 		if( category == Category.LIST) {
-			List theList = listInspector.getList( args[0].get());
-			for(int i=1;  i<args.length;++i) {
-				theList = evaluate(theList, listInspector.getList(args[i].get()));
-			}
-			return theList;
+			List theList1 = list1Inspector.getList( args[0].get());
+			List theList2 = list2Inspector.getList( args[1].get());
+			List retList = evaluate( theList1, theList2);
+			return retList;
 		} else if( category == Category.MAP) {
-			Map theMap = mapInspector.getMap( args[0].get());
-			for(int i=1;  i<args.length;++i) {
-				theMap = evaluate(theMap, mapInspector.getMap(args[i].get()));
-			}
-			return theMap;
+			Map theMap1 = map1Inspector.getMap( args[0].get());
+			Map theMap2 = map2Inspector.getMap( args[1].get());
+			Map retMap = evaluate( theMap1, theMap2);
+			return retMap;
 		} else {
 			throw new HiveException(" Only maps or lists are supported ");
 		}
@@ -102,7 +119,7 @@ public class SetDifferenceUDF extends GenericUDF {
 
 	@Override
 	public String getDisplayString(String[] args) {
-		StringBuilder sb = new StringBuilder("combine( ");
+		StringBuilder sb = new StringBuilder("set_diff( ");
 		for( int i=0; i<args.length -1; ++i) {
 			sb.append(args[i]);
 			sb.append( ",");
@@ -115,29 +132,55 @@ public class SetDifferenceUDF extends GenericUDF {
 	@Override
 	public ObjectInspector initialize(ObjectInspector[] args)
 			throws UDFArgumentException {
-		if( args.length < 2) {
+		if( args.length != 2) {
 			throw new UDFArgumentException("Usage: set_diff takes 2  maps or lists, and returns the difference");
 		}
-		ObjectInspector first = ObjectInspectorUtils.getStandardObjectInspector(args[0] );
+		ObjectInspector first = args[0];
+		ObjectInspector second = args[1];
 		
-		if(first.getCategory() == Category.LIST) {
+		if(first.getCategory() == Category.LIST
+				&& second.getCategory() == Category.LIST ) {
 			category = first.getCategory();
-			listInspector = (ListObjectInspector)first;
-		} else if( first.getCategory() == Category.MAP) {
+			list1Inspector = (ListObjectInspector)first;
+			list2Inspector = (ListObjectInspector)second;
+			
+			if( list1Inspector.getListElementObjectInspector().getCategory() != Category.PRIMITIVE
+					|| list2Inspector.getListElementObjectInspector().getCategory() != Category.PRIMITIVE ) {
+			   throw new UDFArgumentException(" set_diff only takes maps or lists of primitives.");
+			}
+	        prim1Inspector = (PrimitiveObjectInspector) list1Inspector.getListElementObjectInspector();	
+	        prim2Inspector = (PrimitiveObjectInspector) list2Inspector.getListElementObjectInspector();	
+	        if( prim1Inspector.getPrimitiveCategory() != prim2Inspector.getPrimitiveCategory() ) {
+			   throw new UDFArgumentException(" set_diff takes only lists of the same primitive type.");
+	        }
+			
+			stdListInspector =  ObjectInspectorFactory.getStandardListObjectInspector(
+					ObjectInspectorUtils.getStandardObjectInspector( prim1Inspector, ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA ));
+			return stdListInspector;
+		} else if( first.getCategory() == Category.MAP
+				&& second.getCategory() == Category.MAP ) {
 			category = first.getCategory();
-			mapInspector = (MapObjectInspector)first;
+			map1Inspector = (MapObjectInspector)first;
+			map2Inspector = (MapObjectInspector)second;
+			
+			if( map1Inspector.getMapKeyObjectInspector().getCategory() != Category.PRIMITIVE
+					|| map2Inspector.getMapKeyObjectInspector().getCategory() != Category.PRIMITIVE ) {
+			   throw new UDFArgumentException(" set_diff only takes maps or lists of primitives.");
+			}
+	        prim1Inspector = (PrimitiveObjectInspector) map1Inspector.getMapKeyObjectInspector();	
+	        prim2Inspector = (PrimitiveObjectInspector) map2Inspector.getMapKeyObjectInspector();	
+	        if( prim1Inspector.getPrimitiveCategory() != prim2Inspector.getPrimitiveCategory() ) {
+			   throw new UDFArgumentException(" set_diff takes only maps of the same primitive type.");
+	        }
+	        
+			stdMapInspector = ObjectInspectorFactory.getStandardMapObjectInspector(
+					 ObjectInspectorUtils.getStandardObjectInspector(prim1Inspector, ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA),
+					 ObjectInspectorUtils.getStandardObjectInspector(map1Inspector.getMapValueObjectInspector())
+			 );
+			return stdMapInspector;
 		} else {
 			throw new UDFArgumentException(" set_diff only takes maps or lists.");
 		}
-		//// Check that the type in it is all the same type ..
-		//// Check that the are all the same type ...
-		for(int i=1; i<args.length; ++i) {
-			ObjectInspector argInsp = args[i];
-			if(argInsp.getCategory() != category) {
-				throw new UDFArgumentException("set_diff must either be all maps or all lists");
-			}
-		}
-		return first;
 	}
 	
 }

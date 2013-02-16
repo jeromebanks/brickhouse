@@ -49,17 +49,20 @@ public class SketchSet implements ICountDistinct {
     	hash = Hashing.md5();
     }
     
-	public void addHashItem( long hash, String str) {
-		if(sortedMap.size() < maxItems) {
-			sortedMap.put( hash, str);
-		} else {
-			long maxHash = sortedMap.lastKey();
-			if( hash< maxHash) {
-				sortedMap.remove(maxHash);
-				sortedMap.put( hash,str);
-			}
-		}
-	}
+    public void addHashItem( long hash, String str) {
+    	if(sortedMap.size() < maxItems) {
+    		sortedMap.put( hash, str);
+    	} else {
+    		Long hashLong = hash;
+    		if(! sortedMap.containsKey( hashLong)) {
+    			long maxHash = sortedMap.lastKey();
+    			if( hash< maxHash) {
+    				sortedMap.remove(maxHash);
+    				sortedMap.put( hashLong,str);
+    			}
+    		}
+    	}
+    }
 	/**
 	 *   for testing 
 	 * @param hash
@@ -87,6 +90,10 @@ public class SketchSet implements ICountDistinct {
 	
 	public int getMaxItems() {
 		return maxItems;
+	}
+	
+	public long lastHash() {
+		return sortedMap.lastKey();
 	}
 	
 	public double estimateReach() {
