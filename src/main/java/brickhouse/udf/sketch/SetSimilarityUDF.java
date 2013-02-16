@@ -41,11 +41,6 @@ public class SetSimilarityUDF extends UDF {
 			sketchAUB.addItem( bStr);
 		}
 		
-		Map<Long,String> sk1 = sketchA.getHashItemMap();
-		Map<Long,String> sk2 = sketchB.getHashItemMap();
-		Map<Long,String> sk3 = sketchAUB.getHashItemMap();
-		
-		
 		
 		
 		double aEst = sketchA.estimateReach();
