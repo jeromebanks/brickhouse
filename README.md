@@ -41,5 +41,8 @@ Getting Started
 See the wiki on Github at https://github.com/klout/brickhouse/wiki for more 
   information.
 
+Also, see discussions on the Brickhouse Confessions blog on Wordpress 
+ 
+ http://brickhouseconfessions.wordpress.com/
 
 
