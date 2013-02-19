@@ -39,10 +39,10 @@ import org.apache.log4j.Logger;
     value = "string _FUNC_(config, key, value) - Do a single HBase Put on a table.  Config must contain zookeeper \n" +
         "quorum, table name, column, and qualifier. Example of usage: \n" +
         "  hbase_put(map('hbase.zookeeper.quorum', 'hb-zoo1,hb-zoo2', \n" +
-        "                'table_name', 'metrics', " +
-        "                'family', 'c', " +
-        "                'qualifier', 'q'), " +
-        "            'test.prod.visits.total', " +
+        "                'table_name', 'metrics', \n" +
+        "                'family', 'c', \n" +
+        "                'qualifier', 'q'), \n" +
+        "            'test.prod.visits.total', \n" +
         "            '123456') "
 )
 public class PutUDF extends UDF {
