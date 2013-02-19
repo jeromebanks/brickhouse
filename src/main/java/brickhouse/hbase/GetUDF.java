@@ -36,8 +36,8 @@ import org.apache.hadoop.hive.ql.exec.UDF;
  *   
  *
  */
-@Description(name="hbase_put",
-value = "_FUNC_(table,key,family) - Do a single HBase Put on a table " 
+@Description(name="hbase_get",
+value = "_FUNC_(table,key,family) - Do a single HBase Get on a table " 
 )
 public class GetUDF extends UDF {
 	private static Map<String,HTable> htableMap = new HashMap<String,HTable>();

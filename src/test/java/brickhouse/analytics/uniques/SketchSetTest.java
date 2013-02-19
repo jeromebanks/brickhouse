@@ -380,7 +380,7 @@ public class SketchSetTest {
 		double mixed = simUDF.evaluate( a, b);
 		System.out.println("Similarity with mixed = " +mixed);
 		//// Should be about a third
-		Assert.assertEquals( 0.333333333, mixed, 0.01);
+		Assert.assertEquals( 0.333333333, mixed, 0.03);
 		
 	}
 
