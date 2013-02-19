@@ -31,62 +31,75 @@ import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.log4j.Logger;
 
 /**
- *   Simple UDF for doing single PUT into HBase table ..
- *  Not intended for doing massive reads from HBase,
- *   but only when relatively few rows are being read.  
- *   
+ *  Simple UDF for doing single PUT into HBase table.
+ *  NOTE: Not intended for doing massive reads from HBase, but only when relatively few rows are being read.
+ *
  */
 @Description(name="hbase_put",
-value = "_FUNC_(table,key,family) - Do a single HBase Put on a table " 
+    value = "string _FUNC_(config, key, value) - Do a single HBase Put on a table.  Config must zookeeper quorum, " +
+        "table name, and column qualifier. Example of usage: \n" +
+        "  hbase_put(map('hbase.zookeeper.quorum', 'hb-zoo1,hb-zoo2', \n" +
+        "                'table_name', 'metrics', " +
+        "                'family', 'c', " +
+        "                'qualifier', 'q'), " +
+        "            'test.prod.visits.total', " +
+        "            '123456') "
 )
 public class PutUDF extends UDF {
-	private static final Logger LOG = Logger.getLogger( PutUDF.class);
-	private static Map<String,HTable> htableMap = new HashMap<String,HTable>();
-	private static Configuration config = new Configuration(true);
-	
-	static private byte[] FAMILY = "c".getBytes();
-	static private byte[] QUALIFIER = "q".getBytes();
-	
+  private static final Logger LOG = Logger.getLogger(PutUDF.class);
 
-	
-	public String evaluate( String tableName, String key, String value) {
-		try {
-	       HTable table = getHTable( tableName);
-	       Put thePut = new Put( key.getBytes());
-	       thePut.add( FAMILY, QUALIFIER, value.getBytes());
-	       
-	       table.put(thePut);
-	       return "Put " + key + ":" + value;
-		} catch(Exception exc ) {
-			LOG.error( "Error while doing HBase Puts");
-			
-			 ///LOG.error(" Error while trying HBase PUT ",exc);
-			 throw new RuntimeException(exc);
-		}
-		
-		
-	}
-	
-	private HTable getHTable(String tableName ) throws IOException {
-	   HTable table = htableMap.get( tableName);
-	   if(table == null) {
-		   config = new Configuration(true);
-		   Iterator<Entry<String,String>> iter = config.iterator();
-		   while( iter.hasNext()  ) {
-			  Entry<String,String> entry =  iter.next(); 
-			  LOG.info(" BEFORE CONFIG = " + entry.getKey() + " == " + entry.getValue() );
-		   }
-		   config.set("hbase.zookeeper.quorum", "jobs-dev-zoo1,jobs-dev-zoo2,jobs-dev-zoo3");
-		   Configuration hbConfig = HBaseConfiguration.create( config);
-		    iter = hbConfig.iterator();
-		   while( iter.hasNext()  ) {
-			  Entry<String,String> entry =  iter.next(); 
-			  LOG.info(" AFTER CONFIG = " + entry.getKey() + " == " + entry.getValue() );
-		   }
-		  table =   new HTable( hbConfig, tableName);
-		  htableMap.put( tableName, table);
-	   }
-	
-	   return table;
-	}
+  static private String FAMILY_TAG = "family";
+  static private String QUALIFIER_TAG = "qualifier";
+  static private String TABLE_NAME_TAG = "table_name";
+  static private String ZOOKEEPER_QUORUM_TAG = "hbase.zookeeper.quorum";
+
+  private static Map<String, HTable> htableMap_ = new HashMap<String,HTable>();
+  private static Configuration config_ = new Configuration(true);
+
+  public String evaluate(Map<String, String> config, String key, String value) {
+    if (!config.containsKey(FAMILY_TAG) ||
+        !config.containsKey(QUALIFIER_TAG) ||
+        !config.containsKey(TABLE_NAME_TAG) ||
+        !config.containsKey(ZOOKEEPER_QUORUM_TAG)) {
+      String errorMsg = "Error while doing HBase Puts. Config is missing for: " + FAMILY_TAG + " or " +
+      QUALIFIER_TAG + " or " + TABLE_NAME_TAG + " or " + ZOOKEEPER_QUORUM_TAG;
+      LOG.error(errorMsg);
+      throw new RuntimeException(errorMsg);
+    }
+
+    try {
+      HTable table = getHTable(config.get(TABLE_NAME_TAG), config.get(ZOOKEEPER_QUORUM_TAG));
+      Put thePut = new Put(key.getBytes());
+      thePut.add(config.get(FAMILY_TAG).getBytes(), config.get(QUALIFIER_TAG).getBytes(), value.getBytes());
+
+      table.put(thePut);
+      return "Put " + key + ":" + value;
+    } catch(Exception exc) {
+      LOG.error("Error while doing HBase Puts");
+      throw new RuntimeException(exc);
+    }
+  }
+
+  private HTable getHTable(String tableName, String zkQuorum) throws IOException {
+    HTable table = htableMap_.get(tableName);
+    if(table == null) {
+      config_ = new Configuration(true);
+      Iterator<Entry<String,String>> iter = config_.iterator();
+      while(iter.hasNext()) {
+        Entry<String,String> entry =  iter.next();
+        LOG.info("BEFORE CONFIG = " + entry.getKey() + " == " + entry.getValue());
+      }
+      config_.set("hbase.zookeeper.quorum", zkQuorum);
+      Configuration hbConfig = HBaseConfiguration.create(config_);
+      iter = hbConfig.iterator();
+      while(iter.hasNext()) {
+        Entry<String,String> entry =  iter.next();
+        LOG.info("AFTER CONFIG = " + entry.getKey() + " == " + entry.getValue());
+      }
+      table = new HTable(hbConfig, tableName);
+      htableMap_.put(tableName, table);
+    }
+
+    return table;
+  }
 }
