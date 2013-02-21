@@ -16,12 +16,6 @@ package brickhouse.hbase;
  *
  **/
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
@@ -30,13 +24,19 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+
 /**
  *  Simple UDF for doing single PUT into HBase table.
  *  NOTE: Not intended for doing massive reads from HBase, but only when relatively few rows are being read.
  *
  */
 @Description(name="hbase_put",
-    value = "string _FUNC_(config, key, value) - Do a single HBase Put on a table.  Config must contain zookeeper \n" +
+    value = "string _FUNC_(config, map<string, string> key_value) - \n" +
+        "string _FUNC_(config, key, value) - Do a HBase Put on a table. " +
+        " Config must contain zookeeper \n" +
         "quorum, table name, column, and qualifier. Example of usage: \n" +
         "  hbase_put(map('hbase.zookeeper.quorum', 'hb-zoo1,hb-zoo2', \n" +
         "                'table_name', 'metrics', \n" +
@@ -57,15 +57,7 @@ public class PutUDF extends UDF {
   private static Configuration config = new Configuration(true);
 
   public String evaluate(Map<String, String> configIn, String key, String value) {
-    if (!configIn.containsKey(FAMILY_TAG) ||
-        !configIn.containsKey(QUALIFIER_TAG) ||
-        !configIn.containsKey(TABLE_NAME_TAG) ||
-        !configIn.containsKey(ZOOKEEPER_QUORUM_TAG)) {
-      String errorMsg = "Error while doing HBase Puts. Config is missing for: " + FAMILY_TAG + " or " +
-      QUALIFIER_TAG + " or " + TABLE_NAME_TAG + " or " + ZOOKEEPER_QUORUM_TAG;
-      LOG.error(errorMsg);
-      throw new RuntimeException(errorMsg);
-    }
+    checkConfig(configIn);
 
     try {
       HTable table = getHTable(configIn.get(TABLE_NAME_TAG), configIn.get(ZOOKEEPER_QUORUM_TAG));
@@ -74,6 +66,28 @@ public class PutUDF extends UDF {
 
       table.put(thePut);
       return "Put " + key + ":" + value;
+    } catch(Exception exc) {
+      LOG.error("Error while doing HBase Puts");
+      throw new RuntimeException(exc);
+    }
+  }
+
+  public String evaluate(Map<String, String> configIn, Map<String, String> keyValueMap) {
+    checkConfig(configIn);
+
+    try {
+      List<Put> putList = new ArrayList<Put>();
+      for (Map.Entry<String, String> keyValue : keyValueMap.entrySet()) {
+        Put thePut = new Put(keyValue.getKey().getBytes());
+        thePut.add(configIn.get(FAMILY_TAG).getBytes(),
+                   configIn.get(QUALIFIER_TAG).getBytes(),
+                   keyValue.getValue().getBytes());
+        putList.add(thePut);
+      }
+
+      HTable table = getHTable(configIn.get(TABLE_NAME_TAG), configIn.get(ZOOKEEPER_QUORUM_TAG));
+      table.put(putList);
+      return "Put " + keyValueMap.toString();
     } catch(Exception exc) {
       LOG.error("Error while doing HBase Puts");
       throw new RuntimeException(exc);
@@ -101,5 +115,21 @@ public class PutUDF extends UDF {
     }
 
     return table;
+  }
+
+  /**
+   * Throws RuntimeException if config is incomplete.
+   * @param configIn
+   */
+  private void checkConfig(Map<String, String> configIn) {
+    if (!configIn.containsKey(FAMILY_TAG) ||
+        !configIn.containsKey(QUALIFIER_TAG) ||
+        !configIn.containsKey(TABLE_NAME_TAG) ||
+        !configIn.containsKey(ZOOKEEPER_QUORUM_TAG)) {
+      String errorMsg = "Error while doing HBase Puts. Config is missing for: " + FAMILY_TAG + " or " +
+          QUALIFIER_TAG + " or " + TABLE_NAME_TAG + " or " + ZOOKEEPER_QUORUM_TAG;
+      LOG.error(errorMsg);
+      throw new RuntimeException(errorMsg);
+    }
   }
 }

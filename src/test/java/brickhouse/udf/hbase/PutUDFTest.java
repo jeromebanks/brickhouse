@@ -23,7 +23,14 @@ public class PutUDFTest {
     config.put("hbase.zookeeper.quorum", "hbase3-zoo1,hbase3-zoo2,hbase3-zoo3");
     config.put("family", "c");
     config.put("qualifier", "q");
-    System.out.println(udf.evaluate(config, "test.metrics.1", "2.0"));
+    // Write one value.
+    System.out.println(udf.evaluate(config, "test.metrics.0", "2.0"));
+
+    // Write map.
+    Map<String, String> map = new HashMap<String, String>();
+    map.put("test.metrics.1", "3.0");
+    map.put("test.metrics.2", "1.0");
+    System.out.println(udf.evaluate(config, map));
 	}
 
 }
