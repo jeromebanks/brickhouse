@@ -5,7 +5,7 @@ CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayInters
 CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
 CREATE TEMPORARY FUNCTION cast_array AS 'brickhouse.udf.collect.CastArrayUDF';
-CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastArrayUDF';
+CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastMapUDF';
 CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDF';
 CREATE TEMPORARY FUNCTION combine_unique AS 'brickhouse.udf.collect.CombineUniqueUDAF';
 CREATE TEMPORARY FUNCTION conditional_emit AS 'brickhouse.udf.collect.ConditionalEmit';
