@@ -17,12 +17,13 @@ package brickhouse.hbase;
  **/
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
@@ -31,34 +32,49 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 
 /**
- *   Simple UDF for doing single PUT into HBase table ..
+ *   Simple UDF for doing batch GET's from an HBase table ..
  *  Not intended for doing massive reads from HBase,
  *   but only when relatively few rows are being read.  
  *   
  *
  */
-@Description(name="hbase_get",
+@Description(name="hbase_batch_get",
 value = "_FUNC_(table,key,family) - Do a single HBase Get on a table " 
 )
-public class GetUDF extends UDF {
+public class BatchGetUDF extends UDF {
 	
-
-	
-	public String evaluate( Map<String,String>  config, String key) {
+	public List<String> evaluate( Map<String,String> config, List<String> keys) {
 		try {
+		   HTableFactory.checkConfig(config);
 	       HTable table = HTableFactory.getHTable( config);
-	       Get theGet = new Get( key.getBytes());
-	       Result res = table.get( theGet);
 	       
-	       byte[] valBytes = res.getValue(config.get(HTableFactory.FAMILY_TAG).getBytes(),config.get(HTableFactory.QUALIFIER_TAG).getBytes());
-	       if( valBytes != null) {
-	    	  return new String( valBytes);
+	       List<Get> getArr = new ArrayList<Get>();
+	       for(int i=0; i<keys.size(); ++i) {
+	    	   String key = keys.get(i);
+	           Get theGet = new Get( key.getBytes());
+	           getArr.add( theGet);
 	       }
-	       return null;
+	       Result[] results = table.get( getArr);
+	       
+	       ArrayList<String> resultList = new ArrayList<String>();
+	       for(int i=0;i<results.length; ++i) {
+	          Result res = results[i];
+	          
+	          byte[] valBytes = res.getValue( config.get(HTableFactory.FAMILY_TAG).getBytes(), config.get(HTableFactory.QUALIFIER_TAG).getBytes());
+	          if( valBytes != null) {
+	        	  resultList.add(  new String( valBytes));
+	          } else {
+	        	  resultList.add( null);
+	          }
+	       }
+	      
+	       return resultList;
 		} catch(Exception exc ) {
 			 ///LOG.error(" Error while trying HBase PUT ",exc);
 			 throw new RuntimeException(exc);
 		}
+		
+		
 	}
 	
 }

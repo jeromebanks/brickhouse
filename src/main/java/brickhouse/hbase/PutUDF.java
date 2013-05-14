@@ -48,23 +48,18 @@ import java.util.Map.Entry;
 public class PutUDF extends UDF {
   private static final Logger LOG = Logger.getLogger(PutUDF.class);
 
-  static private String FAMILY_TAG = "family";
-  static private String QUALIFIER_TAG = "qualifier";
-  static private String TABLE_NAME_TAG = "table_name";
-  static private String ZOOKEEPER_QUORUM_TAG = "hbase.zookeeper.quorum";
 
-  private static Map<String, HTable> htableMap = new HashMap<String,HTable>();
-  private static Configuration config = new Configuration(true);
 
-  public String evaluate(Map<String, String> configIn, String key, String value) {
-    checkConfig(configIn);
+  public String evaluate(Map<String, String> configMap, String key, String value) {
+    HTableFactory.checkConfig(configMap);
 
     try {
-      HTable table = getHTable(configIn.get(TABLE_NAME_TAG), configIn.get(ZOOKEEPER_QUORUM_TAG));
+      HTable table = HTableFactory.getHTable(configMap);
       Put thePut = new Put(key.getBytes());
-      thePut.add(configIn.get(FAMILY_TAG).getBytes(), configIn.get(QUALIFIER_TAG).getBytes(), value.getBytes());
+      thePut.add(configMap.get(HTableFactory.FAMILY_TAG).getBytes(), configMap.get(HTableFactory.QUALIFIER_TAG).getBytes(), value.getBytes());
 
       table.put(thePut);
+      table.flushCommits();
       return "Put " + key + ":" + value;
     } catch(Exception exc) {
       LOG.error("Error while doing HBase Puts");
@@ -72,21 +67,22 @@ public class PutUDF extends UDF {
     }
   }
 
-  public String evaluate(Map<String, String> configIn, Map<String, String> keyValueMap) {
-    checkConfig(configIn);
+  public String evaluate(Map<String, String> configMap, Map<String, String> keyValueMap) {
+    HTableFactory.checkConfig(configMap);
 
     try {
       List<Put> putList = new ArrayList<Put>();
       for (Map.Entry<String, String> keyValue : keyValueMap.entrySet()) {
         Put thePut = new Put(keyValue.getKey().getBytes());
-        thePut.add(configIn.get(FAMILY_TAG).getBytes(),
-                   configIn.get(QUALIFIER_TAG).getBytes(),
+        thePut.add(configMap.get(HTableFactory.FAMILY_TAG).getBytes(),
+                   configMap.get(HTableFactory.QUALIFIER_TAG).getBytes(),
                    keyValue.getValue().getBytes());
         putList.add(thePut);
       }
 
-      HTable table = getHTable(configIn.get(TABLE_NAME_TAG), configIn.get(ZOOKEEPER_QUORUM_TAG));
+      HTable table = HTableFactory.getHTable(configMap);
       table.put(putList);
+      table.flushCommits();
       return "Put " + keyValueMap.toString();
     } catch(Exception exc) {
       LOG.error("Error while doing HBase Puts");
@@ -94,42 +90,5 @@ public class PutUDF extends UDF {
     }
   }
 
-  private HTable getHTable(String tableName, String zkQuorum) throws IOException {
-    HTable table = htableMap.get(tableName);
-    if(table == null) {
-      config = new Configuration(true);
-      Iterator<Entry<String,String>> iter = config.iterator();
-      while(iter.hasNext()) {
-        Entry<String,String> entry =  iter.next();
-        LOG.info("BEFORE CONFIG = " + entry.getKey() + " == " + entry.getValue());
-      }
-      config.set("hbase.zookeeper.quorum", zkQuorum);
-      Configuration hbConfig = HBaseConfiguration.create(config);
-      iter = hbConfig.iterator();
-      while(iter.hasNext()) {
-        Entry<String,String> entry =  iter.next();
-        LOG.info("AFTER CONFIG = " + entry.getKey() + " == " + entry.getValue());
-      }
-      table = new HTable(hbConfig, tableName);
-      htableMap.put(tableName, table);
-    }
 
-    return table;
-  }
-
-  /**
-   * Throws RuntimeException if config is incomplete.
-   * @param configIn
-   */
-  private void checkConfig(Map<String, String> configIn) {
-    if (!configIn.containsKey(FAMILY_TAG) ||
-        !configIn.containsKey(QUALIFIER_TAG) ||
-        !configIn.containsKey(TABLE_NAME_TAG) ||
-        !configIn.containsKey(ZOOKEEPER_QUORUM_TAG)) {
-      String errorMsg = "Error while doing HBase Puts. Config is missing for: " + FAMILY_TAG + " or " +
-          QUALIFIER_TAG + " or " + TABLE_NAME_TAG + " or " + ZOOKEEPER_QUORUM_TAG;
-      LOG.error(errorMsg);
-      throw new RuntimeException(errorMsg);
-    }
-  }
 }
