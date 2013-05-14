@@ -17,7 +17,7 @@ import brickhouse.analytics.uniques.SketchSet;
  *
  */
 @Description(name="set_similarity",
-value = "_FUNC_(x) - Compute the Jaccard set similarity of two sketch sets. "
+value = "_FUNC_(a,b) - Compute the Jaccard set similarity of two sketch sets. "
 )
 public class SetSimilarityUDF extends UDF {
 

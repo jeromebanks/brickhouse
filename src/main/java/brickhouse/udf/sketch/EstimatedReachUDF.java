@@ -26,7 +26,6 @@ import brickhouse.analytics.uniques.SketchSet;
 /**
  *  Interpret a list of strings as a sketch_set
  *  and return an estimated reach number
- * @author jeromebanks
  *
  */
 @Description(name="estimated_reach",
@@ -35,17 +34,21 @@ import brickhouse.analytics.uniques.SketchSet;
 public class EstimatedReachUDF extends UDF {
 	
 	
-	public Long evaluate( List<String> strList) {
+	public Long evaluate( List<String> strList, int maxItems) {
 		if(strList != null ) {
-			SketchSet sketch = new SketchSet();
-		
-			for(String item : strList) {
-				sketch.addItem( item);
+			if(strList.size() < maxItems) {
+				return (long)strList.size();
+			} else {
+				return (long)SketchSet.EstimatedReach( strList.get( strList.size() -1), maxItems);
 			}
-			return (long)sketch.estimateReach();
 		} else {
 			return 0l;
 		}
 	}
+	
+	public Long evaluate( List<String> strList) {
+		return evaluate( strList, SketchSet.DEFAULT_MAX_ITEMS );
+	}
+	
 
 }

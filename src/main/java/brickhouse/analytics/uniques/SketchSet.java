@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -31,22 +32,22 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
 public class SketchSet implements ICountDistinct {
+	static final int SIZEOF_LONG = 64;
+	
     public  static int DEFAULT_MAX_ITEMS = 5000;
     private  int maxItems = DEFAULT_MAX_ITEMS;
 	private TreeMap<Long,String> sortedMap;
-	private HashFunction hash;
+	private static HashFunction HASH = Hashing.md5();
 	
     
     public SketchSet() {
     	sortedMap = new TreeMap<Long,String>();
-    	hash = Hashing.md5();
     }
     	
     
     public SketchSet(int max ) {
     	this.maxItems = max;
     	sortedMap = new TreeMap<Long,String>();
-    	hash = Hashing.md5();
     }
     
     public void addHashItem( long hash, String str) {
@@ -72,7 +73,7 @@ public class SketchSet implements ICountDistinct {
 	}
 	
 	public void addItem( String str) {
-		HashCode hc = hash.hashString( str);
+		HashCode hc = HASH.hashString( str);
 		this.addHashItem( hc.asLong(), str);
 	}
 	
@@ -96,24 +97,59 @@ public class SketchSet implements ICountDistinct {
 		return sortedMap.lastKey();
 	}
 	
+	public String lastItem() {
+		return sortedMap.lastEntry().getValue();
+	}
+	
 	public double estimateReach() {
 		if(sortedMap.size() < maxItems) {
 			return sortedMap.size();
 		}
 		long maxHash = sortedMap.lastKey();
-		///double maxHashShifted = (double)( (double)maxHash + (double)Long.MAX_VALUE );
-		
-		///double ratio = ((double)maxItems)/maxHashShifted;
-		///double est = ratio*((double)Long.MAX_VALUE)*2.0;
-		///return est;
-		
-		BigDecimal maxHashShifted = new BigDecimal(BigInteger.valueOf( maxHash).add( BigInteger.valueOf( Long.MAX_VALUE)));
+		return EstimatedReach(maxHash, maxItems);
+	}
 	
+	static public double EstimatedReach( String lastItem, int maxItems) {
+		long maxHash = HASH.hashString(lastItem).asLong();
+		return EstimatedReach( maxHash, maxItems);
+	}
+	
+	static public double EstimatedReach( long maxHash, int maxItems) {
+		BigDecimal maxHashShifted = new BigDecimal(BigInteger.valueOf( maxHash).add( BigInteger.valueOf( Long.MAX_VALUE)));
+		
 		BigDecimal bigMaxItems = new BigDecimal( maxItems*2).multiply( BigDecimal.valueOf( Long.MAX_VALUE));
 		BigDecimal ratio = bigMaxItems.divide(maxHashShifted, RoundingMode.HALF_EVEN);
 		return ratio.doubleValue();
-		
 	}
+	
+	
+	public long calculateSimHash() {
+		int[] sumTable = new int[ SIZEOF_LONG];
+		
+		Iterator<Long> hashes = getHashItemMap().keySet().iterator();
+		while( hashes.hasNext() ) {
+			long hash = hashes.next();
+			long mask = 1l;
+			for(int pos =0; pos < SIZEOF_LONG; ++pos ) {
+				if( (hash & mask) != 0l) {
+					sumTable[pos]++;
+				} else {
+					sumTable[pos]--;
+				}
+				mask <<=  1;
+			}
+		}
+		long simHash = 0l;
+		long mask = 1l;
+		for(int pos=0; pos <SIZEOF_LONG; ++pos) {
+			if( sumTable[pos] > 0) {
+				simHash |= mask;
+			}
+			mask <<=1;
+		}
+		return simHash;
+	}
+	
 	
 	
 	public void combine( SketchSet other) {
