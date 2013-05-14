@@ -4,7 +4,7 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.3.2</version>
+	<version>0.4.1</version>
 	<name>GitHub Maven Plugin Example</name>
 	<description>Project to demonstrate GitHub Maven plugins</description>
 	<url>https://github.com/klout/github-maven-example</url>
@@ -217,10 +217,6 @@
 
 
 
-
-
-
-
         <!-- Needed for Hive unit tests -->
         <dependency>
             <groupId>org.apache.hive</groupId>
@@ -234,6 +230,8 @@
 			<version>4.8</version>
 			<scope>test</scope>
 		</dependency>
+
+
 	</dependencies>
 
   <distributionManagement>
