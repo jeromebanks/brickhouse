@@ -16,7 +16,6 @@ package brickhouse.udf.json;
  *
  **/
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
@@ -60,170 +58,14 @@ import org.codehaus.jackson.map.ObjectMapper;
  *   
  */
 @Description(name="from_json",
-value = "_FUNC_(a,b) - Returns an arbitrary Hive Structure given a JSON string, and an example template object."
+value = "_FUNC_(json,template,convert_flag) - Returns an arbitrary Hive Structure given a JSON string, and an example template object."
 )
 public class FromJsonUDF extends GenericUDF {
 	private StringObjectInspector jsonInspector;
 	private InspectorHandle inspHandle;
 	
-	private interface InspectorHandle {
-		Object parseJson(JsonNode jsonNode);
-		
-	    ObjectInspector getReturnType();	
-	}
-	
-	/** 
-	 * If one passes a named-struct in, then one can parse arbitrary
-	 *   structures
-	 **/
-	private class StructHandle implements InspectorHandle {
-		private List<String> fieldNames;
-		private List<InspectorHandle> handleList;
-		
-		
-		public StructHandle( StructObjectInspector structInspector) throws UDFArgumentException {
-			fieldNames = new ArrayList<String>();
-			handleList = new ArrayList<InspectorHandle>();
-			
-			List<? extends StructField> refs =  structInspector.getAllStructFieldRefs();
-			for( StructField ref : refs) {
-				fieldNames.add( ref.getFieldName());
-				InspectorHandle fieldHandle = generateInspectorHandle( ref.getFieldObjectInspector() );
-				handleList.add( fieldHandle);
-			}
-		}
 
-		@Override
-		public Object parseJson(JsonNode jsonNode) {
-			/// For structs, they just return a list of object values
-			List<Object> valList = new ArrayList<Object>();
-			
-			for(int i=0; i< fieldNames.size(); ++i) {
-				String key = fieldNames.get( i);
-				JsonNode valNode = jsonNode.get( key);
-				InspectorHandle valHandle = handleList.get(i);
-				
-				Object valObj = valHandle.parseJson(valNode);
-				valList.add( valObj);
-			}
-			
-			return valList;
-		}
 
-		@Override
-		public ObjectInspector getReturnType() {
-			List<ObjectInspector> structFieldObjectInspectors = new ArrayList<ObjectInspector>();
-			for( InspectorHandle fieldHandle : handleList) {
-				structFieldObjectInspectors.add( fieldHandle.getReturnType() );
-			}
-			return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, structFieldObjectInspectors);
-		}
-		
-	};
-	
-	private class MapHandle implements InspectorHandle {
-		private InspectorHandle mapValHandle;
-		private StandardMapObjectInspector retInspector;
-
-		/// for JSON maps (or "objects"), the keys are always string objects
-		///  
-		public MapHandle( MapObjectInspector insp) throws UDFArgumentException {
-			if( !(insp.getMapKeyObjectInspector() instanceof StringObjectInspector)) {
-				throw new RuntimeException( " JSON maps can only have strings as keys");
-			}
-			mapValHandle = generateInspectorHandle( insp.getMapValueObjectInspector() );
-		}
-		@Override
-		public Object parseJson(JsonNode jsonNode) {
-			Map<String,Object> newMap = (Map<String,Object>)retInspector.create();
-			
-			Iterator<String> keys = jsonNode.getFieldNames();
-			while( keys.hasNext()) {
-				String key = keys.next();
-				JsonNode valNode = jsonNode.get( key);
-				Object val = mapValHandle.parseJson(valNode);
-				newMap.put( key, val);
-			}
-			return newMap;
-		}
-
-		@Override
-		public ObjectInspector getReturnType() {
-			retInspector = ObjectInspectorFactory.getStandardMapObjectInspector(
-					PrimitiveObjectInspectorFactory.javaStringObjectInspector,
-					mapValHandle.getReturnType() );
-			return retInspector;
-		}
-		
-	}
-	
-	private class ListHandle implements InspectorHandle {
-		private StandardListObjectInspector retInspector;
-		private InspectorHandle elemHandle;
-
-		public ListHandle( ListObjectInspector insp) throws UDFArgumentException {
-			elemHandle = generateInspectorHandle( insp.getListElementObjectInspector() );
-		}
-		
-		@Override
-		public Object parseJson(JsonNode jsonNode) {
-			List newList = (List) retInspector.create(0);
-			
-			Iterator<JsonNode> listNodes = jsonNode.getElements();
-			while(listNodes.hasNext()) {
-				JsonNode elemNode = listNodes.next();
-				if( elemNode != null) {
-					Object elemObj = elemHandle.parseJson(elemNode);
-					newList.add( elemObj);
-				} else {
-					newList.add(null);
-				}
-			}
-			return newList;
-		}
-
-		@Override
-		public ObjectInspector getReturnType() {
-			retInspector =  ObjectInspectorFactory.getStandardListObjectInspector( elemHandle.getReturnType() );
-			return retInspector;
-		}
-		
-	}
-	
-	private class PrimitiveHandle implements InspectorHandle {
-		private PrimitiveCategory category;
-		
-		public PrimitiveHandle(PrimitiveObjectInspector insp) throws UDFArgumentException {
-			category = insp.getPrimitiveCategory();
-			
-		}
-
-		@Override
-		public Object parseJson(JsonNode jsonNode) {
-			if(jsonNode == null) {
-				return null;
-			}
-			switch( category) {
-			case STRING:
-				return jsonNode.getTextValue();
-			case LONG:
-				return jsonNode.getLongValue();
-			case INT:
-				return jsonNode.getIntValue();
-			case DOUBLE:
-				return jsonNode.getDoubleValue();
-			case BOOLEAN:
-				return jsonNode.getBooleanValue();
-			}
-			return null;
-		}
-
-		@Override
-		public ObjectInspector getReturnType() {
-			return PrimitiveObjectInspectorFactory.getPrimitiveJavaObjectInspector(category);
-		}
-		
-	}
 
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
@@ -257,26 +99,50 @@ public class FromJsonUDF extends GenericUDF {
 		    throw new UDFArgumentException("from_json expects a JSON string and a template object");
 		}
 		jsonInspector = (StringObjectInspector) arg0[0];
-		inspHandle = generateInspectorHandle( arg0[1]);
+		inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandle( arg0[1]);
 		
 		return inspHandle.getReturnType();
 	}
 	
 	
-	private InspectorHandle generateInspectorHandle( ObjectInspector insp) throws UDFArgumentException {
-		Category cat = insp.getCategory();
-		switch( cat)  {
-		case LIST:
-			return new ListHandle( (ListObjectInspector)insp );
-		case MAP:
-			return new MapHandle( (MapObjectInspector)insp);
-		case STRUCT:
-			return new StructHandle( (StructObjectInspector)insp);
-		case PRIMITIVE:
-			return new PrimitiveHandle( (PrimitiveObjectInspector)insp);
-		}
-		return null;
-	}
+	static public String ToCamelCase(String underscore ) {
+		StringBuilder sb = new StringBuilder();
+		String[] splArr = underscore.toLowerCase().split( "_");
 		
+		sb.append( splArr[0]);
+		for(int i=1; i<splArr.length; ++i) {
+			String word = splArr[i];
+			char firstChar = word.charAt(0);
+			if( firstChar >= 'a' && firstChar <= 'z' ) {
+			   sb.append( (char)(word.charAt(0) + 'A' - 'a' ));
+			   sb.append( word.substring(1));
+			} else {
+				sb.append( word);
+			}
+		
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 *  Converts from CamelCase to a string containing
+	 *    underscores.
+	 *    
+	 * @param camel
+	 * @return
+	 */
+    static public String FromCamelCase(String camel) {
+    	StringBuilder sb = new StringBuilder();
+    	for(int i=0; i<camel.length(); ++i) {
+    		char ch = camel.charAt(i);
+    		if( ch >= 'A' && ch <= 'Z') {
+    			sb.append('_');
+    			sb.append((char)( ch - 'A' + 'a'));
+    		} else {
+    			sb.append( ch);
+    		}
+    	}
+    	return sb.toString();
+    }
 
 }

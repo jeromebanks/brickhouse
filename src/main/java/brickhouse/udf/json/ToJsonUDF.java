@@ -25,6 +25,7 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -39,6 +40,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspecto
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableConstantBooleanObjectInspector;
 
 /**
  *  Generate a JSON string from an arbitrary Hive structure.
@@ -57,10 +59,11 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspe
  *
  */
 @Description(name="to_json",
-    value = "_FUNC_(a,b) - Returns a JSON string from an arbitrary Hive structure."
+    value = "_FUNC_(struct, convert_to_camel_case) - Returns a JSON string from an arbitrary Hive structure."
 )
 public class ToJsonUDF extends GenericUDF {
 	private InspectorHandle inspHandle;
+	private Boolean convertFlag = Boolean.FALSE;
 	private interface  InspectorHandle {
 		abstract public String generateJson( Object obj);
 	};
@@ -96,7 +99,11 @@ public class ToJsonUDF extends GenericUDF {
 					isFirst = false;
 				}
 				String keyJson = keyInspector.generateJson(entry.getKey());
-				builder.append(keyJson);
+				if( convertFlag) {
+					builder.append( FromJsonUDF.ToCamelCase(keyJson));
+				} else {
+					builder.append(keyJson);
+				}
 				builder.append(":");
 				String valJson = valueInspector.generateJson( entry.getValue() );
 				builder.append(valJson);
@@ -142,7 +149,12 @@ public class ToJsonUDF extends GenericUDF {
 					isFirst = false;
 				}
 				sb.append("\"");
-				sb.append( fieldNames.get(i));
+				String fieldName = fieldNames.get(i);
+				if( convertFlag) {
+					sb.append( FromJsonUDF.ToCamelCase(fieldName)) ;
+				} else {
+				  sb.append( fieldName);
+				}
 				sb.append("\"");
 				sb.append(":");
 				sb.append( fieldInspectorHandles.get(i).generateJson( structObjs.get(i)));
@@ -319,11 +331,23 @@ public class ToJsonUDF extends GenericUDF {
   @Override
   public ObjectInspector initialize(ObjectInspector[] args)
       throws UDFArgumentException {
-    if(args.length != 1 ) {
-      throw new UDFArgumentException(" ToJson takes only one object as an argument");
+    if(args.length != 1 && args.length != 2 ) {
+      throw new UDFArgumentException(" ToJson takes an object as an argument, and an optional to_camel_case flag");
     }
     ObjectInspector oi= args[0];
     inspHandle = GenerateInspectorHandle( oi);
+    
+    if(args.length == 2 ) {
+    	ObjectInspector flagInsp = args[1];
+    	if( flagInsp.getCategory() != Category.PRIMITIVE 
+   		  || ((PrimitiveObjectInspector)flagInsp).getPrimitiveCategory()
+   		      != PrimitiveCategory.BOOLEAN
+   		  || !(flagInsp instanceof ConstantObjectInspector )) {
+    		throw new UDFArgumentException(" ToJson takes an object as an argument, and an optional to_camel_case flag");
+    	}
+    	WritableConstantBooleanObjectInspector constInsp= (WritableConstantBooleanObjectInspector) flagInsp;
+    	convertFlag = constInsp.getWritableConstantValue().get();
+    }
 
     return PrimitiveObjectInspectorFactory.javaStringObjectInspector;
   }
