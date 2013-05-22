@@ -85,6 +85,10 @@ public class SketchSet implements ICountDistinct {
 		return this.sortedMap;
 	}
 	
+	public List<Long> getMinHashes() {
+	   return new ArrayList( this.sortedMap.keySet());
+	}
+	
 	public void clear() {
 		this.sortedMap.clear();
 	}

@@ -323,6 +323,31 @@ public class SketchSetTest {
 		System.out.println( " Last Key is " +  hashItemMap.lastKey() );
 	}
 	
+	
+	@Test 
+	public void testGetMinHashes() {
+		SketchSet ss = new SketchSet();
+
+		int numHashes =  5100 + (int)(Math.random()*15000); 
+		for(int i=0; i<numHashes; ++i) {
+			UUID randomUUID = UUID.randomUUID();
+			///System.out.println(" RandomUUID " + randomUUID.toString());
+			ss.addItem( randomUUID.toString());
+		}
+		
+		List<Long> md5Hashes = ss.getMinHashes();
+		long last = Long.MIN_VALUE;
+		for( long md5 : md5Hashes) {
+			Assert.assertTrue( md5 > last);
+			last = md5;
+		}
+		double estReach = SketchSet.EstimatedReach( last, ss.getMaxItems());
+		double ratio = estReach/(double)numHashes;
+		System.out.println( " Estimated Reach = " + estReach + " num Hashes  = " + numHashes + " ; Ratio = " + ratio);
+		Assert.assertTrue( ratio < 1.05 && ratio > 0.95);
+		
+	}
+	
 	@Test 
 	public void testSetSimilarity() {
 		int numHashes = 200000;

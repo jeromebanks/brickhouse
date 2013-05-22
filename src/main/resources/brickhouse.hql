@@ -1,6 +1,8 @@
 
 CREATE TEMPORARY FUNCTION append_array AS 'brickhouse.udf.collect.AppendArrayUDF';
 CREATE TEMPORARY FUNCTION array_index AS 'brickhouse.udf.collect.ArrayIndexUDF';
+CREATE TEMPORARY FUNCTION first_index AS 'brickhouse.udf.collect.FirstIndexUDF';
+CREATE TEMPORARY FUNCTION last_index AS 'brickhouse.udf.collect.LastIndexUDF';
 CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayIntersectUDF';
 CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
@@ -23,6 +25,7 @@ CREATE TEMPORARY FUNCTION union_map AS 'brickhouse.udf.collect.UnionUDAF';
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF';
 CREATE TEMPORARY FUNCTION to_json AS 'brickhouse.udf.json.ToJsonUDF';
+CREATE TEMPORARY FUNCTION from_json AS 'brickhouse.udf.json.FromJsonUDF';
 CREATE TEMPORARY FUNCTION distributed_map AS 'brickhouse.udf.dcache.DistributedMapUDF';
 
 CREATE TEMPORARY FUNCTION assert_equals AS 'brickhouse.udf.sanity.AssertEqualsUDF';
@@ -36,7 +39,10 @@ CREATE TEMPORARY FUNCTION combine_sketch AS 'brickhouse.udf.sketch.CombineSketch
 CREATE TEMPORARY FUNCTION convert_to_sketch AS 'brickhouse.udf.sketch.ConvertToSketchUDF';
 CREATE TEMPORARY FUNCTION estimated_reach AS 'brickhouse.udf.sketch.EstimatedReachUDF';
 CREATE TEMPORARY FUNCTION md5 AS 'brickhouse.udf.sketch.Md5';
+CREATE TEMPORARY FUNCTION hash_md5 AS 'brickhouse.udf.sketch.HashMD5UDF';
+CREATE TEMPORARY FUNCTION set_similarity AS 'brickhouse.udf.sketch.SetSimilarityUDF';
 CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF';
+CREATE TEMPORARY FUNCTION sketch_hashes AS 'brickhouse.udf.sketch.SketchHashesUDAF';
 CREATE TEMPORARY FUNCTION union_sketch AS 'brickhouse.udf.sketch.UnionSketchSetUDAF';
 CREATE TEMPORARY FUNCTION multiday_count AS 'brickhouse.udf.sketch.MultiDaySketcherUDAF';
 
@@ -55,7 +61,10 @@ CREATE TEMPORARY FUNCTION bloom_not AS 'brickhouse.udf.bloom.BloomNotUDF';
 CREATE TEMPORARY FUNCTION add_days AS 'brickhouse.udf.date.AddDaysUDF';
 CREATE TEMPORARY FUNCTION date_range AS 'brickhouse.udf.date.DateRangeUDTF';
 
+CREATE TEMPORARY FUNCTION hbase_balanced_key AS 'brickhouse.hbase.GenerateBalancedKeyUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF';
+CREATE TEMPORARY FUNCTION hbase_batch_get AS 'brickhouse.hbase.BatchGetUDF';
+CREATE TEMPORARY FUNCTION hbase_cached_get AS 'brickhouse.hbase.CachedGetUDF';
 CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
 CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
 CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
