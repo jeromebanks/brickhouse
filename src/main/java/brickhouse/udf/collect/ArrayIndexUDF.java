@@ -53,7 +53,7 @@ public class ArrayIndexUDF extends GenericUDF {
 		int idx = intInspector.get( arg0[1].get() );
 		
 		if (idx < 0) {
-			idx = listInspector.getListLength( arg0[0] ) + idx;
+			idx = listInspector.getListLength( list ) + idx;
 		}
 
 		Object unInsp =  listInspector.getListElement(list, idx);
