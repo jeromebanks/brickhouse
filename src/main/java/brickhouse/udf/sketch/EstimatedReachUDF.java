@@ -63,7 +63,6 @@ public class EstimatedReachUDF extends GenericUDF {
 		
 		int listLen = listInspector.getListLength( listObj);
 		if( listLen < maxItems ) {
-			LOG.info(" Only " + listLen + " out of " + maxItems + " items ");
 			return (long)listLen;
 		}
 		if( listLen > maxItems) {
@@ -75,13 +74,11 @@ public class EstimatedReachUDF extends GenericUDF {
 			StringObjectInspector strInspector = (StringObjectInspector) elemInspector;
 			String lastItem = strInspector.getPrimitiveJavaObject(uninspMax);
 			double reach = SketchSet.EstimatedReach( lastItem, maxItems);
-			LOG.info( "LastElement is string " + lastItem + " ; est reach is " + reach);
 			return (long)(reach);
 		case LONG :
 			LongObjectInspector longInspector = (LongObjectInspector) elemInspector;
 			long lastHash = longInspector.get(uninspMax);
 			double reachHash = SketchSet.EstimatedReach( lastHash, maxItems);
-			LOG.info( "LastHash is long " + lastHash + " ; est reach is " + reachHash);
 			return (long)(reachHash);
 		 default:
 			 /// should not happen

@@ -70,6 +70,8 @@ public interface InspectorHandle {
     	@Override
     	public Object parseJson(JsonNode jsonNode) {
     		/// For structs, they just return a list of object values
+    		if(jsonNode.isNull())
+    			return null;
     		List<Object> valList = new ArrayList<Object>();
     		
     		for(int i=0; i< fieldNames.size(); ++i) {
@@ -110,6 +112,8 @@ public interface InspectorHandle {
 		}
 		@Override
 		public Object parseJson(JsonNode jsonNode) {
+			if(jsonNode.isNull()) 
+				return null;
 			Map<String,Object> newMap = (Map<String,Object>)retInspector.create();
 			
 			Iterator<String> keys = jsonNode.getFieldNames();
@@ -142,6 +146,8 @@ public interface InspectorHandle {
 		
 		@Override
 		public Object parseJson(JsonNode jsonNode) {
+			if(jsonNode.isNull() )
+				return null;
 			List newList = (List) retInspector.create(0);
 			
 			Iterator<JsonNode> listNodes = jsonNode.getElements();
@@ -176,7 +182,8 @@ public interface InspectorHandle {
 
 		@Override
 		public Object parseJson(JsonNode jsonNode) {
-			if(jsonNode == null) {
+			if(jsonNode == null
+					|| jsonNode.isNull()) {
 				return null;
 			}
 			switch( category) {
@@ -186,6 +193,8 @@ public interface InspectorHandle {
 				return jsonNode.getLongValue();
 			case INT:
 				return jsonNode.getIntValue();
+			case FLOAT:
+				return new Float(jsonNode.getDoubleValue());
 			case DOUBLE:
 				return jsonNode.getDoubleValue();
 			case BOOLEAN:

@@ -72,4 +72,10 @@ CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
 
+CREATE TEMPORARY FUNCTION hyperloglog AS 'brickhouse.udf.hll.HyperLogLogUDAF';
+CREATE TEMPORARY FUNCTION union_hyperloglog AS 'brickhouse.udf.hll.UnionHyperLogLogUDAF';
+CREATE TEMPORARY FUNCTION combine_hyperloglog AS 'brickhouse.udf.hll.CombineHyperLogLogUDF';
+CREATE TEMPORARY FUNCTION hll_est_cardinality AS 'brickhouse.udf.hll.CombineHyperLogLogUDF';
+
+
 

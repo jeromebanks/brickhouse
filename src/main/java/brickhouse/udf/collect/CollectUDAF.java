@@ -163,7 +163,7 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 	public static class MapCollectUDAFEvaluator extends GenericUDAFEvaluator {
 		// For PARTIAL1 and COMPLETE: ObjectInspectors for original data
 		private PrimitiveObjectInspector  inputKeyOI;
-		private ObjectInspector inputValOI; /// XXX Support nested values instead of just primitives as values
+		private ObjectInspector inputValOI; 
 		// For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (list
 		// of objs)
 		private StandardMapObjectInspector moi;

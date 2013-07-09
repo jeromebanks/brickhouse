@@ -49,7 +49,7 @@ public class ArrayIndexOfUDF extends GenericUDF {
 
 		// Check if ARRAY_IDX argument is of category LIST
 		if (!arguments[ARRAY_IDX].getCategory().equals(Category.LIST)) {
-			throw new UDFArgumentTypeException(ARRAY_IDX, "\"" + org.apache.hadoop.hive.serde.Constants.LIST_TYPE_NAME
+			throw new UDFArgumentTypeException(ARRAY_IDX, "\"" + "LIST"
 			        + "\" " + "expected at function " + FUNC_NAME + ", but " + "\"" + arguments[ARRAY_IDX].getTypeName()
 			        + "\" " + "is found");
 		}

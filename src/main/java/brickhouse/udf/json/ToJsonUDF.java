@@ -36,6 +36,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BooleanObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.FloatObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
@@ -270,6 +271,22 @@ public class ToJsonUDF extends GenericUDF {
 			return Long.toString(num);
 		}
 	}
+	
+	private class FloatInspectorHandle implements InspectorHandle {
+		private FloatObjectInspector floatInspector;
+
+		public FloatInspectorHandle( FloatObjectInspector insp) {
+			floatInspector = insp;
+		}
+		@Override
+		public String generateJson(Object obj) {
+			if( obj == null) {
+				return "null";
+			}
+			float num = floatInspector.get(obj);
+			return Float.toString(num);
+		}
+	}
 
 	private class BooleanInspectorHandle implements InspectorHandle {
 		private BooleanObjectInspector boolInspector;
@@ -306,6 +323,8 @@ public class ToJsonUDF extends GenericUDF {
 				return new LongInspectorHandle((LongObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.BOOLEAN) {
 				return new BooleanInspectorHandle((BooleanObjectInspector) primInsp);
+			} else if( primCat == PrimitiveCategory.FLOAT) {
+				return new FloatInspectorHandle((FloatObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.DOUBLE) {
 				return new DoubleInspectorHandle((DoubleObjectInspector) primInsp);
 			}
