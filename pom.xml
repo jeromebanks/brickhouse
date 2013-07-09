@@ -4,7 +4,7 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.4.1</version>
+	<version>0.5.1</version>
 	<packaging>jar</packaging>
 	<name>Brickhouse</name>
 	<description>Extensions of Hive for the Data Developer</description>
@@ -42,7 +42,7 @@
 	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
        <apache.hadoop.version>0.20.2</apache.hadoop.version>
        <apache.hbase.version>0.92.1</apache.hbase.version>
-	   <apache.hive.version>0.9.0</apache.hive.version>
+	   <apache.hive.version>0.10.0</apache.hive.version>
 	</properties>
 
 	<build>
@@ -122,6 +122,19 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+			   <groupId>org.apache.maven.plugins</groupId>
+			   <artifactId>maven-gpg-plugin</artifactId>
+			   <executions>
+			     <execution>
+			       <id>sign-artifacts</id>
+			       <phase>verify</phase>
+			       <goals>
+			         <goal>sign</goal>
+			       </goals>
+			     </execution>
+			   </executions>
+			 </plugin>
 		</plugins>
 	</build>
 
@@ -176,6 +189,17 @@
 	       <groupId>joda-time</groupId>
 	       <artifactId>joda-time</artifactId>
 	       <version>2.1</version>
+	    </dependency>
+
+        <!--
+           Depend on streamlib 
+		     for  HyperLogLog 
+		     implementation
+		  -->
+	    <dependency>
+	       <groupId>com.clearspring.analytics</groupId>
+	       <artifactId>stream</artifactId>
+	       <version>2.4.0-SNAPSHOT</version>
 	    </dependency>
 
 

@@ -42,7 +42,7 @@ CREATE TEMPORARY FUNCTION md5 AS 'brickhouse.udf.sketch.Md5';
 CREATE TEMPORARY FUNCTION hash_md5 AS 'brickhouse.udf.sketch.HashMD5UDF';
 CREATE TEMPORARY FUNCTION set_similarity AS 'brickhouse.udf.sketch.SetSimilarityUDF';
 CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF';
-CREATE TEMPORARY FUNCTION sketch_hashes AS 'brickhouse.udf.sketch.SketchHashesUDAF';
+CREATE TEMPORARY FUNCTION sketch_hashes AS 'brickhouse.udf.sketch.SketchHashesUDF';
 CREATE TEMPORARY FUNCTION union_sketch AS 'brickhouse.udf.sketch.UnionSketchSetUDAF';
 CREATE TEMPORARY FUNCTION multiday_count AS 'brickhouse.udf.sketch.MultiDaySketcherUDAF';
 
@@ -75,7 +75,7 @@ CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 CREATE TEMPORARY FUNCTION hyperloglog AS 'brickhouse.udf.hll.HyperLogLogUDAF';
 CREATE TEMPORARY FUNCTION union_hyperloglog AS 'brickhouse.udf.hll.UnionHyperLogLogUDAF';
 CREATE TEMPORARY FUNCTION combine_hyperloglog AS 'brickhouse.udf.hll.CombineHyperLogLogUDF';
-CREATE TEMPORARY FUNCTION hll_est_cardinality AS 'brickhouse.udf.hll.CombineHyperLogLogUDF';
+CREATE TEMPORARY FUNCTION hll_est_cardinality AS 'brickhouse.udf.hll.EstimateCardinalityUDF';
 
 
 
