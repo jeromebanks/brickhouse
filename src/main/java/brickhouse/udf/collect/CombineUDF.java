@@ -70,13 +70,15 @@ public class CombineUDF extends GenericUDF {
 		} else if( category == Category.MAP) {
 			Object theMap = stdMapInspector.create();
 			for(int i=0;  i<args.length;++i) {
-				Map addMap = mapInspectorList[i].getMap( args[i].get() );
-				for( Object uninspObj : addMap.entrySet() ) {
-					Map.Entry uninspEntry = (Entry) uninspObj;
-					Object stdKey = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getKey(), mapInspectorList[i].getMapKeyObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
-					Object stdVal = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getValue(), mapInspectorList[i].getMapValueObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
-					stdMapInspector.put( theMap, stdKey, stdVal);
-				}
+				if(args[i].get() != null) {
+				   Map addMap = mapInspectorList[i].getMap( args[i].get() );
+				   for( Object uninspObj : addMap.entrySet() ) {
+					  Map.Entry uninspEntry = (Entry) uninspObj;
+					  Object stdKey = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getKey(), mapInspectorList[i].getMapKeyObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+					  Object stdVal = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getValue(), mapInspectorList[i].getMapValueObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+					  stdMapInspector.put( theMap, stdKey, stdVal);
+				  }
+			   }
 			}
 			return theMap;
 		} else {
