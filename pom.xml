@@ -158,6 +158,12 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${apache.hive.version}</version>
+            <exclusions>
+              <exclusion>
+               <groupId>javax.jdo</groupId>
+               <artifactId>jdo2-api</artifactId>
+              </exclusion>
+            </exclusions> 
         </dependency>
 
         <dependency>
@@ -192,18 +198,11 @@
 	    <dependency>
 	       <groupId>com.clearspring.analytics</groupId>
 	       <artifactId>stream</artifactId>
-	       <version>2.4.0-SNAPSHOT</version>
+	       <version>2.3.0</version>
 	    </dependency>
 
 
 
-        <!-- Needed for Hive unit tests -->
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-cli</artifactId>
-            <version>${apache.hive.version}</version>
-            <scope>test</scope>
-        </dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
