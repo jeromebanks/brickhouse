@@ -82,20 +82,20 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 			// init output object inspectors
 			// The output of a partial aggregation is a list
 			if (m == Mode.PARTIAL1) {
-				inputOI = (PrimitiveObjectInspector) parameters[0];
+				inputOI = parameters[0];
 				return ObjectInspectorFactory
-						.getStandardListObjectInspector((PrimitiveObjectInspector) ObjectInspectorUtils
+						.getStandardListObjectInspector( ObjectInspectorUtils
 								.getStandardObjectInspector(inputOI));
 			} else {
 				if (!(parameters[0] instanceof StandardListObjectInspector)) {
 					//no map aggregation.
-					inputOI = (PrimitiveObjectInspector)  ObjectInspectorUtils
+					inputOI = ObjectInspectorUtils
 							.getStandardObjectInspector(parameters[0]);
 					return (StandardListObjectInspector) ObjectInspectorFactory
 							.getStandardListObjectInspector(inputOI);
 				} else {
 					internalMergeOI = (StandardListObjectInspector) parameters[0];
-					inputOI = (PrimitiveObjectInspector) internalMergeOI.getListElementObjectInspector();
+					inputOI = internalMergeOI.getListElementObjectInspector();
 					loi = (StandardListObjectInspector) ObjectInspectorUtils.getStandardObjectInspector(internalMergeOI);
 					return loi;
 				}
