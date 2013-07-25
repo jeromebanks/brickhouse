@@ -16,6 +16,8 @@ package brickhouse.udf.json;
  *
  **/
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -40,8 +42,12 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.FloatObjectInspec
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableConstantBooleanObjectInspector;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonGenerator;
 
 /**
  *  Generate a JSON string from an arbitrary Hive structure.
@@ -65,52 +71,46 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableConstantB
 public class ToJsonUDF extends GenericUDF {
 	private InspectorHandle inspHandle;
 	private Boolean convertFlag = Boolean.FALSE;
+	private JsonFactory jsonFactory;
+	
+	
 	private interface  InspectorHandle {
-		abstract public String generateJson( Object obj);
+		abstract public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException,IOException;
 	};
 
 
 	private class MapInspectorHandle implements InspectorHandle {
 		private MapObjectInspector mapInspector;
-		private InspectorHandle keyInspector;
+		private StringObjectInspector keyObjectInspector;
 		private InspectorHandle valueInspector;
 
 
 		public MapInspectorHandle( MapObjectInspector mInsp) throws UDFArgumentException {
 			mapInspector = mInsp;
-			keyInspector = GenerateInspectorHandle( mInsp.getMapKeyObjectInspector());
+			try {
+			  keyObjectInspector = (StringObjectInspector) mInsp.getMapKeyObjectInspector();
+			} catch(ClassCastException castExc) {
+				throw new UDFArgumentException("Only Maps with strings as keys can be converted to valid JSON");
+			}
 			valueInspector = GenerateInspectorHandle( mInsp.getMapValueObjectInspector());
 		}
 
 		@Override
-		public String generateJson(Object obj) {
-			if( obj == null) {
-				return "null";
-			}
-			StringBuilder builder = new StringBuilder();
-			builder.append( " { " );
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
+			gen.writeStartObject();
 			Map map = mapInspector.getMap(obj);
-			boolean isFirst = true;
 			Iterator<Map.Entry> iter = map.entrySet().iterator();
 			while( iter.hasNext())	 {
 				Map.Entry entry = iter.next();
-				if( !isFirst) {
-					builder.append(",");
-				} else {
-					isFirst = false;
-				}
-				String keyJson = keyInspector.generateJson(entry.getKey());
+				String keyJson = keyObjectInspector.getPrimitiveJavaObject(entry.getKey());
 				if( convertFlag) {
-					builder.append( FromJsonUDF.ToCamelCase(keyJson));
+					gen.writeFieldName( FromJsonUDF.ToCamelCase(keyJson));
 				} else {
-					builder.append(keyJson);
+					gen.writeFieldName( keyJson);
 				}
-				builder.append(":");
-				String valJson = valueInspector.generateJson( entry.getValue() );
-				builder.append(valJson);
+			    valueInspector.generateJson( gen, entry.getValue() );
 			}
-			builder.append(" } ");
-			return builder.toString();	
+			gen.writeEndObject();
 		}
 
 	}
@@ -133,35 +133,25 @@ public class ToJsonUDF extends GenericUDF {
 		}
 
 		@Override
-		public String generateJson(Object obj) {
-			if(obj== null) {
-				return null;
-			}
-		    //// Interpret a struct as a map ...	
-			StringBuilder sb = new StringBuilder();
-			sb.append(" { ");
-		    List structObjs = structInspector.getStructFieldsDataAsList(obj);
-			
-		    boolean isFirst = true;
-			for(int i=0; i<fieldNames.size(); ++i) {
-				if(!isFirst) {
-					sb.append(",");
-				} else {
-					isFirst = false;
+		public void generateJson(JsonGenerator gen,Object obj) throws JsonGenerationException, IOException {
+			//// Interpret a struct as a map ...	
+			if(obj == null) {
+				gen.writeNull();
+			} else {
+				gen.writeStartObject();
+				List structObjs = structInspector.getStructFieldsDataAsList(obj);
+
+				for(int i=0; i<fieldNames.size(); ++i) {
+					String fieldName = fieldNames.get(i);
+					if( convertFlag) {
+						gen.writeFieldName( FromJsonUDF.ToCamelCase(fieldName)) ;
+					} else {
+						gen.writeFieldName( fieldName);
+					}
+					fieldInspectorHandles.get(i).generateJson( gen, structObjs.get(i));
 				}
-				sb.append("\"");
-				String fieldName = fieldNames.get(i);
-				if( convertFlag) {
-					sb.append( FromJsonUDF.ToCamelCase(fieldName)) ;
-				} else {
-				  sb.append( fieldName);
-				}
-				sb.append("\"");
-				sb.append(":");
-				sb.append( fieldInspectorHandles.get(i).generateJson( structObjs.get(i)));
+				gen.writeEndObject();
 			}
-		    sb.append(" } ");
-		    return sb.toString();
 		}
 		
 	}
@@ -178,24 +168,17 @@ public class ToJsonUDF extends GenericUDF {
 		}
 
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
-			}
-			StringBuilder builder = new StringBuilder();
-			builder.append( " [ " );
-			List list = arrayInspector.getList( obj);
-			boolean isFirst = true;
-			for( Object listObj : list)	 {
-				if( !isFirst) 
-					builder.append(",");
-				else
-				    isFirst = false;
-				String listObjJson = valueInspector.generateJson(listObj);
-				builder.append(listObjJson);
-			}
-			builder.append(" ] ");
-			return builder.toString();	
+				gen.writeNull();
+			} else { 
+				gen.writeStartArray();
+				List list = arrayInspector.getList( obj);
+				for( Object listObj : list)	 {
+					valueInspector.generateJson(gen, listObj);
+				}
+				gen.writeEndArray();
+			} 
 		}
 
 	}
@@ -209,17 +192,13 @@ public class ToJsonUDF extends GenericUDF {
 		}
 
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
-			}
-			StringBuilder builder = new StringBuilder();
-			builder.append( "\"" );
-			String str = strInspector.getPrimitiveJavaObject(obj);
-			//// TODO  escape the strings ????  XXX
-			builder.append( str);
-			builder.append( "\"");
-			return builder.toString();
+				gen.writeNull();
+			} else {
+				String str = strInspector.getPrimitiveJavaObject(obj);
+				gen.writeString( str);
+			} 
 		}
 
 	}
@@ -231,12 +210,13 @@ public class ToJsonUDF extends GenericUDF {
 			intInspector = insp;
 		}
 		@Override
-		public String generateJson(Object obj) {
-			if( obj == null) {
-				return "null";
+		public void generateJson(JsonGenerator gen,Object obj) throws JsonGenerationException, IOException {
+			if( obj == null) 
+				gen.writeNull();
+			else {
+			   int num = intInspector.get(obj);
+			   gen.writeNumber( num);
 			}
-			int num = intInspector.get(obj);
-			return Integer.toString(num);
 		}
 	}
 	
@@ -247,12 +227,13 @@ public class ToJsonUDF extends GenericUDF {
 			dblInspector = insp;
 		}
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
+				gen.writeNull();
+			} else {
+				double num = dblInspector.get(obj);
+				gen.writeNumber( num);
 			}
-			double num = dblInspector.get(obj);
-			return Double.toString(num);
 		}
 	}
 
@@ -263,14 +244,33 @@ public class ToJsonUDF extends GenericUDF {
 			longInspector = insp;
 		}
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen,Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
+				gen.writeNull();
+			} else {
+				long num = longInspector.get(obj);
+				gen.writeNumber( num);
 			}
-			long num = longInspector.get(obj);
-			return Long.toString(num);
 		}
 	}
+
+	private class ShortInspectorHandle implements InspectorHandle {
+		private ShortObjectInspector shortInspector;
+
+		public ShortInspectorHandle( ShortObjectInspector insp) {
+			shortInspector = insp;
+		}
+		@Override
+		public void generateJson(JsonGenerator gen,Object obj) throws JsonGenerationException, IOException {
+			if( obj == null) {
+				gen.writeNull();
+			} else {
+				short num = shortInspector.get(obj);
+				gen.writeNumber( num);
+			}
+		}
+	}
+	
 	
 	private class FloatInspectorHandle implements InspectorHandle {
 		private FloatObjectInspector floatInspector;
@@ -279,12 +279,13 @@ public class ToJsonUDF extends GenericUDF {
 			floatInspector = insp;
 		}
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
-			}
-			float num = floatInspector.get(obj);
-			return Float.toString(num);
+				gen.writeNull();
+			} else {
+				float num = floatInspector.get(obj);
+				gen.writeNumber(num);
+			} 
 		}
 	}
 
@@ -295,12 +296,13 @@ public class ToJsonUDF extends GenericUDF {
 			boolInspector = insp;
 		}
 		@Override
-		public String generateJson(Object obj) {
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
 			if( obj == null) {
-				return "null";
+				gen.writeNull();
+			} else {
+				boolean tf = boolInspector.get( obj);
+				gen.writeBoolean( tf);
 			}
-			boolean tf = boolInspector.get( obj);
-			return Boolean.toString(tf);
 		}
 	}
 
@@ -321,6 +323,8 @@ public class ToJsonUDF extends GenericUDF {
 				return new IntInspectorHandle((IntObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.LONG ) {
 				return new LongInspectorHandle((LongObjectInspector) primInsp);
+			} else if( primCat == PrimitiveCategory.SHORT ) {
+				return new ShortInspectorHandle((ShortObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.BOOLEAN) {
 				return new BooleanInspectorHandle((BooleanObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.FLOAT) {
@@ -339,7 +343,17 @@ public class ToJsonUDF extends GenericUDF {
 
   @Override
   public Object evaluate(DeferredObject[] args) throws HiveException {
-	  return inspHandle.generateJson( args[0].get() );
+	  try { 
+		  StringWriter writer = new StringWriter();
+		  JsonGenerator gen = jsonFactory.createJsonGenerator( writer);
+		  inspHandle.generateJson(gen,  args[0].get() );
+		  gen.close();
+		  writer.close();
+		  return writer.toString();
+	  } catch(  IOException io ) {
+		 throw new HiveException(io);
+	  }
+	  
   }
 
   @Override
@@ -367,6 +381,8 @@ public class ToJsonUDF extends GenericUDF {
     	WritableConstantBooleanObjectInspector constInsp= (WritableConstantBooleanObjectInspector) flagInsp;
     	convertFlag = constInsp.getWritableConstantValue().get();
     }
+    
+    jsonFactory = new JsonFactory();
 
     return PrimitiveObjectInspectorFactory.javaStringObjectInspector;
   }

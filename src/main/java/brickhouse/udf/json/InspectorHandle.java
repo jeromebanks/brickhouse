@@ -191,6 +191,8 @@ public interface InspectorHandle {
 				return jsonNode.getTextValue();
 			case LONG:
 				return jsonNode.getLongValue();
+			case SHORT:
+				return (short)jsonNode.getIntValue();
 			case INT:
 				return jsonNode.getIntValue();
 			case FLOAT:

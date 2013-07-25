@@ -26,6 +26,9 @@ CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF';
 CREATE TEMPORARY FUNCTION to_json AS 'brickhouse.udf.json.ToJsonUDF';
 CREATE TEMPORARY FUNCTION from_json AS 'brickhouse.udf.json.FromJsonUDF';
+CREATE TEMPORARY FUNCTION to_camel_case AS 'brickhouse.udf.json.ConvertToCamelCaseUDF';
+CREATE TEMPORARY FUNCTION from_camel_case AS 'brickhouse.udf.json.ConvertFromCamelCaseUDF';
+
 CREATE TEMPORARY FUNCTION distributed_map AS 'brickhouse.udf.dcache.DistributedMapUDF';
 
 CREATE TEMPORARY FUNCTION assert_equals AS 'brickhouse.udf.sanity.AssertEqualsUDF';
