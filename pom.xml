@@ -4,7 +4,7 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.5.3</version>
+	<version>0.5.4</version>
 	<packaging>jar</packaging>
 	<name>Brickhouse</name>
 	<description>Extensions of Hive for the Data Developer</description>
@@ -122,7 +122,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!--
 			<plugin>
 			   <groupId>org.apache.maven.plugins</groupId>
 			   <artifactId>maven-gpg-plugin</artifactId>
@@ -136,7 +135,6 @@
 			     </execution>
 			   </executions>
 			 </plugin>
-				-->
 		</plugins>
 	</build>
 
@@ -220,8 +218,23 @@
 	    <id>sonatype-nexus-staging</id>
 	     <name>Nexus Staging Repository</name>
 	     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-	   </repository>
-   </distributionManagement>
+      </repository>
+  </distributionManagement>
+
+<!--
+  <distributionManagement>
+    <repository>
+      <id>central</id>
+      <name>maven-repo-releases</name>
+      <url>http://maven.klout:8081/artifactory/libs-release-local</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>maven-repo-snapshots</name>
+      <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
+    </snapshotRepository>
+  </distributionManagement>
+  -->
 
 
 </project>
