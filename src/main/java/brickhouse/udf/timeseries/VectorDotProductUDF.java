@@ -40,15 +40,15 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.log4j.Logger;
 
 /**
- * Add two vectors together
+ * Dot product of two vectors
  * 
  */
 @Description(
-		 name = "vector_add",
-		 value = " Add two vectors together"
+		 name = "vector_dot_product",
+		 value = " Return the Dot product of two vectors"
 )
-public class VectorAddUDF extends GenericUDF {
-	private static final Logger LOG = Logger.getLogger(VectorAddUDF.class);
+public class VectorDotProductUDF extends GenericUDF {
+	private static final Logger LOG = Logger.getLogger(VectorDotProductUDF.class);
 	private ListObjectInspector list1Inspector;
 	private ListObjectInspector list2Inspector;
 	private MapObjectInspector map1Inspector;
@@ -57,9 +57,6 @@ public class VectorAddUDF extends GenericUDF {
 	private PrimitiveObjectInspector key2Inspector;
 	private PrimitiveObjectInspector value1Inspector;
 	private PrimitiveObjectInspector value2Inspector;
-	
-	private StandardListObjectInspector retListInspector;
-	private StandardMapObjectInspector retMapInspector;
 
 	
 	public Object evaluateList( Object  list1Obj, Object list2Obj) {
@@ -69,31 +66,34 @@ public class VectorAddUDF extends GenericUDF {
 			LOG.warn("vector lengths do not match " + list1Obj + " :: " + list2Obj);
 			return null;
 		}
-		Object retList = retListInspector.create( 0 );
+		double dot = 0.0;
 		for(int i=0; i< len1; ++i) {
 			Object list1Val = this.list1Inspector.getListElement(list1Obj, i);
 			double list1Dbl = NumericUtil.getNumericValue(value1Inspector,list1Val);
 			Object list2Val = this.list2Inspector.getListElement(list2Obj, i);
 			double list2Dbl = NumericUtil.getNumericValue(value2Inspector,list2Val);
 			
-			double newVal = list1Dbl + list2Dbl;
-			retListInspector.set(retList, i,  NumericUtil.castToPrimitiveNumeric( newVal,
-					((PrimitiveObjectInspector)retListInspector.getListElementObjectInspector()).getPrimitiveCategory()));
+			double newVal = list1Dbl*list2Dbl;
+			dot += newVal;
 		}
-		return retList;
+		return dot;
 	}
 	
 	public Object evaluateMap( Object  uninspMapObj1, Object uninspMapObj2) {
 		/// A little tricky, because keys won't match if the ObjectInspectors aren't the 
 		/// same .. If the ObjectInspectors are the same class, assume they can be compared
-		Object retMap = retMapInspector.create();
+		double dot = 0.0;
 		Map map1 =  map1Inspector.getMap(uninspMapObj1);
 		Map map2 =  map2Inspector.getMap(uninspMapObj2);
+		boolean simpleLookup = map1Inspector.getMapKeyObjectInspector().getClass().equals(
+					map2Inspector.getMapKeyObjectInspector() );
 		Map stdKeyMap = new HashMap();
-		for( Object mapKey2 : map2.keySet() ) {
+		if( !simpleLookup) {
+		   for( Object mapKey2 : map2.keySet() ) {
 			  Object stdKey2 = ObjectInspectorUtils.copyToStandardJavaObject(mapKey2, 
 					  map2Inspector.getMapKeyObjectInspector());
 			  stdKeyMap.put( stdKey2, mapKey2);
+		   }
 		}
 		
 		for( Object mapKey1 : map1.keySet() ) {
@@ -103,34 +103,23 @@ public class VectorAddUDF extends GenericUDF {
 		    Object stdKey1 = ObjectInspectorUtils.copyToStandardJavaObject(mapKey1, 
 		    		map1Inspector.getMapKeyObjectInspector());
 		    
-		    Object lookupKey = stdKeyMap.get(stdKey1);
-		    
-		    if( lookupKey != null) {
-		    	Object mapVal2Obj = map2.get( lookupKey);
-		    	double mapVal2Dbl = NumericUtil.getNumericValue(value2Inspector, mapVal2Obj);
-		    	double newVal = mapVal1Dbl + mapVal2Dbl;
-		    	stdKeyMap.remove( stdKey1);
-			
-		    	Object stdVal = NumericUtil.castToPrimitiveNumeric( newVal,
-					((PrimitiveObjectInspector)retMapInspector.getMapValueObjectInspector()).getPrimitiveCategory());
-		    	retMapInspector.put(retMap, stdKey1, stdVal);
+		    Object mapVal2Obj = null;
+		    if( simpleLookup) {
+		    	mapVal2Obj = map2.get( mapKey1);
 		    } else {
-		    	/// Add the dimension, even if it wasn't in the second vector
-		    	Object stdVal = NumericUtil.castToPrimitiveNumeric( mapVal1Dbl,
-					((PrimitiveObjectInspector)retMapInspector.getMapValueObjectInspector()).getPrimitiveCategory());
-		    	retMapInspector.put(retMap, stdKey1, stdVal);
+		    	/// Need to do lookup in stdKeyMap
+		       mapVal2Obj = map2.get( stdKeyMap.get( stdKey1));
+		    }
+		    
+		    if( mapVal2Obj != null) {
+		    	double mapVal2Dbl = NumericUtil.getNumericValue(value2Inspector, mapVal2Obj);
+		    	double newVal = mapVal1Dbl*mapVal2Dbl;
+			
+		    	dot += newVal;
 		    }
 			
 		}
-		/// Add all the values which were in map2, but not in map1
-		for( Object leftOverKey : stdKeyMap.keySet() ) {
-			Object leftOverVal = map2.get( stdKeyMap.get( leftOverKey));
-	    	double leftOverDbl = NumericUtil.getNumericValue(value2Inspector, leftOverVal);
-	    	Object stdVal = NumericUtil.castToPrimitiveNumeric( leftOverDbl,
-					((PrimitiveObjectInspector)retMapInspector.getMapValueObjectInspector()).getPrimitiveCategory());
-		   	retMapInspector.put(retMap, leftOverKey, stdVal);
-		}
-		return retMap;
+		return dot;
 	}
 	
 
@@ -206,19 +195,7 @@ public class VectorAddUDF extends GenericUDF {
 		}
 		
 		
-		 
-		if(list1Inspector != null ) {
-		  retListInspector = ObjectInspectorFactory.getStandardListObjectInspector(
-			   ObjectInspectorUtils.getStandardObjectInspector(value1Inspector,
-					   ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA) );
-		   return retListInspector;
-		} else {
-		  retMapInspector = ObjectInspectorFactory.getStandardMapObjectInspector(
-				  ObjectInspectorUtils.getStandardObjectInspector(map1Inspector.getMapKeyObjectInspector(),
-						  ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA),
-			   ObjectInspectorUtils.getStandardObjectInspector(value1Inspector,
-					   ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA) );
-		   return retMapInspector;
-		}
+		//// Dot products are always doubles 
+		return PrimitiveObjectInspectorFactory.javaDoubleObjectInspector;
 	}
 }

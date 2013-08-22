@@ -1,9 +1,17 @@
 package brickhouse.udf.json;
 
 import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 
 public class JsonUDFTest {
 
@@ -26,4 +34,5 @@ public class JsonUDFTest {
 		
 		Assert.assertEquals( "this_text_is_in_camel_case", under);
 	}
+	
 }

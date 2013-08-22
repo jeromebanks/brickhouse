@@ -39,44 +39,55 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.log4j.Logger;
 
 /**
- * Multiply a vector of numbers times a scalar value
+ * Normalize a Vector
  * 
  */
 @Description(
-		 name = "vector_scalar_mult",
-		 value = " Multiply a vector times a scalar"
+		 name = "vector_normalize",
+		 value = " Normalize a Vector"
 )
-public class VectorMultUDF extends GenericUDF {
-	private static final Logger LOG = Logger.getLogger(VectorMultUDF.class);
+public class VectorNormalizeUDF extends GenericUDF {
+	private static final Logger LOG = Logger.getLogger(VectorNormalizeUDF.class);
 	private ListObjectInspector listInspector;
 	private MapObjectInspector mapInspector;
 	private PrimitiveObjectInspector valueInspector;
-	private PrimitiveObjectInspector scalarInspector;
 	
 	private StandardListObjectInspector retListInspector;
 	private StandardMapObjectInspector retMapInspector;
 
 	
-	public Object evaluateList( Object  listObj, double scalar) {
+	public Object evaluateList( Object  listObj) {
 		Object retList = retListInspector.create( 0 );
+		double tot = 0.0;
 		for(int i=0; i< listInspector.getListLength( listObj); ++i) {
 			Object listVal = this.listInspector.getListElement(listObj, i);
 			double listDbl = NumericUtil.getNumericValue(valueInspector,listVal);
-			double newVal = listDbl*scalar;
-			retListInspector.set(retList, i,  NumericUtil.castToPrimitiveNumeric( newVal,
+			tot +=  listDbl;
+		}
+		for(int i=0; i< listInspector.getListLength( listObj); ++i) {
+			Object listVal = this.listInspector.getListElement(listObj, i);
+			double listDbl = NumericUtil.getNumericValue(valueInspector,listVal);
+			retListInspector.set(retList, i,  NumericUtil.castToPrimitiveNumeric( listDbl/tot,
 					((PrimitiveObjectInspector)retListInspector.getListElementObjectInspector()).getPrimitiveCategory()));
 		}
+		
 		return retList;
 	}
 	
-	public Object evaluateMap( Object  uninspMapObj, double scalar) {
+	public Object evaluateMap( Object  uninspMapObj) {
 		Object retMap = retMapInspector.create();
 		Map map =  mapInspector.getMap(uninspMapObj);
+		double tot = 0.0;
 		for( Object mapKey : map.keySet() ) {
 			Object mapValObj = map.get( mapKey);
 			double mapValDbl = NumericUtil.getNumericValue( valueInspector, mapValObj);
+			tot += mapValDbl;
+		}
+		for( Object mapKey : map.keySet() ) {
+			Object mapValObj = map.get( mapKey);
+			double mapValDbl = NumericUtil.getNumericValue( valueInspector, mapValObj);
+			double newVal = mapValDbl/tot;
 			
-			double newVal = mapValDbl*scalar;
 		    Object stdKey = ObjectInspectorUtils.copyToStandardJavaObject(mapKey, 
 		    		mapInspector.getMapKeyObjectInspector());
 		    Object stdVal = NumericUtil.castToPrimitiveNumeric( newVal,
@@ -90,31 +101,30 @@ public class VectorMultUDF extends GenericUDF {
 
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-	    double dbl = NumericUtil.getNumericValue( scalarInspector, arg0[1].get() );
 		if( listInspector != null) {
-		   return evaluateList( arg0[0].get(), dbl);
+		   return evaluateList( arg0[0].get());
 		} else {
-		   return evaluateMap( arg0[0].get(), dbl);
+		   return evaluateMap( arg0[0].get());
 		}
 	}
 
 	@Override
 	public String getDisplayString(String[] arg0) {
-		return "vector_scalar_mult";
+		return "vector_normalize";
 	}
 	
 	
 	private void usage(String message) throws UDFArgumentException {
-		LOG.error("vector_scalar_mult: Multiply a vector times a scalar value : " + message);
-		throw new UDFArgumentException("vector_scalar_mult: Multiply a vector times a scalar value : " + message);
+		LOG.error("vector_normalize: Normalize a vector : " + message);
+		throw new UDFArgumentException("vector_normalize: Normalize a vector : " + message);
 	}
 	
 
 	@Override
 	public ObjectInspector initialize(ObjectInspector[] arg0)
 			throws UDFArgumentException {
-		if( arg0.length != 2)
-			usage("Must have two arguments.");
+		if( arg0.length != 1)
+			usage("Must have one argument.");
 			
 		if(arg0[0].getCategory() == Category.MAP ) {
 			this.mapInspector = (MapObjectInspector) arg0[0];
@@ -140,26 +150,17 @@ public class VectorMultUDF extends GenericUDF {
 		if( ! NumericUtil.isNumericCategory( valueInspector.getPrimitiveCategory() )) {
 			usage(" Vector values must be numeric");
 		}
-		if( arg0[1].getCategory() != Category.PRIMITIVE) {
-			usage(" scalar needs to be a primitive type.");
-		}
-		this.scalarInspector = (PrimitiveObjectInspector) arg0[1];
-		if( ! NumericUtil.isNumericCategory( scalarInspector.getPrimitiveCategory() )) {
-			usage(" Scalar needs to be a numeric type");
-		}
-		
 		 
 		if(listInspector != null ) {
 		  retListInspector = ObjectInspectorFactory.getStandardListObjectInspector(
-			   ObjectInspectorUtils.getStandardObjectInspector(valueInspector,
-						  ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA));
+			   ObjectInspectorUtils.getStandardObjectInspector(valueInspector) );
 		   return retListInspector;
 		} else {
 		  retMapInspector = ObjectInspectorFactory.getStandardMapObjectInspector(
 				  ObjectInspectorUtils.getStandardObjectInspector(mapInspector.getMapKeyObjectInspector(),
 						  ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA),
 			   ObjectInspectorUtils.getStandardObjectInspector(valueInspector,
-						  ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA));
+					   ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA) );
 		   return retMapInspector;
 		}
 	}

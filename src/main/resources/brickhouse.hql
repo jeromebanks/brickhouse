@@ -52,7 +52,11 @@ CREATE TEMPORARY FUNCTION multiday_count AS 'brickhouse.udf.sketch.MultiDaySketc
 CREATE TEMPORARY FUNCTION moving_avg AS 'brickhouse.udf.timeseries.MovingAvgUDF';
 CREATE TEMPORARY FUNCTION sum_array AS 'brickhouse.udf.timeseries.SumArrayUDF';
 CREATE TEMPORARY FUNCTION vector_add AS 'brickhouse.udf.timeseries.VectorAddUDF';
-CREATE TEMPORARY FUNCTION vector_mult AS 'brickhouse.udf.timeseries.VectorMultUDF';
+CREATE TEMPORARY FUNCTION vector_scalar_mult AS 'brickhouse.udf.timeseries.VectorMultUDF';
+CREATE TEMPORARY FUNCTION vector_cross_product AS 'brickhouse.udf.timeseries.VectorCrossProductUDF';
+CREATE TEMPORARY FUNCTION vector_dot_product AS 'brickhouse.udf.timeseries.VectorDotProductUDF';
+CREATE TEMPORARY FUNCTION vector_magnitude AS 'brickhouse.udf.timeseries.VectorMagnitudeUDF';
+CREATE TEMPORARY FUNCTION union_vector_sum AS 'brickhouse.udf.timeseries.VectorUnionSumUDAF';
 
 CREATE TEMPORARY FUNCTION bloom AS 'brickhouse.udf.bloom.BloomUDAF';
 CREATE TEMPORARY FUNCTION distributed_bloom AS 'brickhouse.udf.bloom.DistributedBloomUDF';
