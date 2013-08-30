@@ -193,6 +193,8 @@ public interface InspectorHandle {
 				return jsonNode.getLongValue();
 			case SHORT:
 				return (short)jsonNode.getIntValue();
+			case BYTE:
+				return (byte)jsonNode.getIntValue();
 			case INT:
 				return jsonNode.getIntValue();
 			case FLOAT:
