@@ -228,6 +228,9 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			for(int j=4; j < first.size(); ++j ) {
 				String kvStr =  ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(first.get(j));
 				String[] kvArr = kvStr.split("=");
+				if(kvArr.length == 2 ) {
+					configMap.put( kvArr[0], kvArr[1]);
+				}
 			}
 			
 			for(int i=2; i< partialResult.size(); ++i) {
