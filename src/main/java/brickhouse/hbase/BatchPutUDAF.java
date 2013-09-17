@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -100,7 +101,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 	
 
 		private int batchSize = 10000;
-		private int numPutRecords = 0;/// XXX TODO Count 
+		private int numPutRecords = 0;
 		
 		public static final String BATCH_SIZE_TAG = "batch_size";
 		
@@ -223,6 +224,11 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			configMap.put( HTableFactory.FAMILY_TAG, family);
 			String qualifier = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(first.get(3));
 			configMap.put( HTableFactory.QUALIFIER_TAG, qualifier);
+			//// Include arbitrary configurations, by adding strings of the form k=v
+			for(int j=4; j < first.size(); ++j ) {
+				String kvStr =  ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(first.get(j));
+				String[] kvArr = kvStr.split("=");
+			}
 			
 			for(int i=2; i< partialResult.size(); ++i) {
 				
@@ -249,7 +255,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		public Object terminate(AggregationBuffer agg) throws HiveException {
 			PutBuffer myagg = (PutBuffer) agg;
 			batchUpdate( myagg, true);
-			return "Finished Batch updates ; Num Puts = " + numPutRecords ; /// XXX TODO -count how many updated
+			return "Finished Batch updates ; Num Puts = " + numPutRecords ; 
 
 		}
 
@@ -265,10 +271,19 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			tname.add( configMap.get( HTableFactory.ZOOKEEPER_QUORUM_TAG));
 			tname.add( configMap.get( HTableFactory.FAMILY_TAG) );
 			tname.add( configMap.get( HTableFactory.QUALIFIER_TAG ));
+			
+			for( Entry<String,String> entry : configMap.entrySet() ) {
+				if(!entry.getKey().equals( HTableFactory.TABLE_NAME_TAG)
+						&& !entry.getKey().equals( HTableFactory.ZOOKEEPER_QUORUM_TAG )
+						&& !entry.getKey().equals( HTableFactory.FAMILY_TAG )
+						&& !entry.getKey().equals( HTableFactory.QUALIFIER_TAG ) ) {
+					
+					tname.add( entry.getKey() + "=" + entry.getValue());
+				}
+			}
 			ret.add( tname);
 			
 			for(Put thePut : myagg.putList) {
-				/// XXX TODO XXX TODO Abstract to include all columns ...
 				ArrayList<String> kvList = new ArrayList<String>();
 				kvList.add( new String(thePut.getRow() )  );
 			    Map<byte[],List<KeyValue>> familyMap = thePut.getFamilyMap();

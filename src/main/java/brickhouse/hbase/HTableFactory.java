@@ -30,6 +30,7 @@ public class HTableFactory {
 	  static  String QUALIFIER_TAG = "qualifier";
 	  static  String TABLE_NAME_TAG = "table_name";
 	  static  String ZOOKEEPER_QUORUM_TAG = "hbase.zookeeper.quorum";
+	  static  String AUTOFLUSH_TAG = "hbase.client.autoflush";
 
 	  private static Map<String, HTable> htableMap = new HashMap<String,HTable>();
 	  private static Configuration hbConfig;
@@ -42,11 +43,18 @@ public class HTableFactory {
 			  if(hbConfig == null) {
 				  Configuration config = new Configuration(true);
 				  config.set("hbase.zookeeper.quorum", configMap.get( ZOOKEEPER_QUORUM_TAG));
+				  for( Entry<String,String> entry : configMap.entrySet()) {
+					  config.set( entry.getKey(), entry.getValue());
+				  }
 				  hbConfig = HBaseConfiguration.create(config);
 			  }
 
 			  table = new HTable(hbConfig, tableName);
-			  table.setAutoFlush(false);
+			  
+			  if(configMap.containsKey(AUTOFLUSH_TAG)) {
+				  Boolean flushFlag = Boolean.valueOf( configMap.get(AUTOFLUSH_TAG));
+				  table.setAutoFlush(flushFlag);
+			  }
 			 
 			  htableMap.put(tableName, table);
 		  }
