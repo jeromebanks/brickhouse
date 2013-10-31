@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
@@ -36,38 +37,28 @@ import org.apache.hadoop.hive.ql.exec.UDF;
  *   
  *
  */
-@Description(name="hbase_put",
-value = "_FUNC_(table,key,family) - Do a single HBase Put on a table " 
+@Description(name="hbase_get",
+value = "_FUNC_(table,key,family) - Do a single HBase Get on a table " 
 )
 public class GetUDF extends UDF {
-	private static Map<String,HTable> htableMap = new HashMap<String,HTable>();
-	private static Configuration config = new Configuration(true);
+	
 
 	
-	public String evaluate( String tableName, String key) {
+	public String evaluate( Map<String,String>  config, String key) {
 		try {
-	       HTable table = getHTable( tableName);
+	       HTable table = HTableFactory.getHTable( config);
 	       Get theGet = new Get( key.getBytes());
 	       Result res = table.get( theGet);
-	       ImmutableBytesWritable bytes=  res.getBytes();
-	       return new String( bytes.get());
+	       
+	       byte[] valBytes = res.getValue(config.get(HTableFactory.FAMILY_TAG).getBytes(),config.get(HTableFactory.QUALIFIER_TAG).getBytes());
+	       if( valBytes != null) {
+	    	  return new String( valBytes);
+	       }
+	       return null;
 		} catch(Exception exc ) {
 			 ///LOG.error(" Error while trying HBase PUT ",exc);
 			 throw new RuntimeException(exc);
 		}
-		
-		
 	}
 	
-	private HTable getHTable(String tableName ) throws IOException {
-	   HTable table = htableMap.get( tableName);
-	   if(table == null) {
-			   config.set("hbase.zookeeper.quorum", "jobs-dev-zoo1,jobs-dev-zoo2,jobs-dev-zoo3");
-
-			  table =   new HTable( HBaseConfiguration.create(config), tableName);
-			  htableMap.put( tableName, table);
-	   }
-	
-	   return table;
-	}
 }

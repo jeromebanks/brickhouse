@@ -43,15 +43,22 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspecto
  */
 public class ArrayIndexUDF extends GenericUDF {
 	private ListObjectInspector listInspector;
+	private ObjectInspector elemInspector;
 	private IntObjectInspector intInspector;
 	
 
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-		List list = listInspector.getList( arg0[0].get() );
+		Object list =  arg0[0].get();
 		int idx = intInspector.get( arg0[1].get() );
 		
-		return listInspector.getListElement(list, idx);
+		if (idx < 0) {
+			idx = listInspector.getListLength( list ) + idx;
+		}
+
+		Object unInsp =  listInspector.getListElement(list, idx);
+				
+		return unInsp;
 	}
 
 	@Override
@@ -73,7 +80,7 @@ public class ArrayIndexUDF extends GenericUDF {
 		listInspector = (ListObjectInspector) arg0[0];
 		intInspector = (IntObjectInspector) arg0[1];
 		
-		return ObjectInspectorUtils.getStandardObjectInspector( listInspector.getListElementObjectInspector() );
+		return  listInspector.getListElementObjectInspector();
 	}
 
 }

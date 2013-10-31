@@ -18,19 +18,16 @@ package brickhouse.udf.collect;
 
 import java.util.ArrayList;
 
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
-import org.apache.hadoop.hive.serde.Constants;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
-import org.apache.hadoop.io.Text;
 
 /**
  *   NumericRange is a UDTF for generating 
@@ -54,7 +51,7 @@ public class NumericRange extends GenericUDTF {
 			throw new UDFArgumentException("NumericRange takes 1 to 3 integer arguments");
 		}
 		for(ObjectInspector oi: argOIs) {
-			if( !oi.getTypeName().equals(Constants.INT_TYPE_NAME)) {
+			if( oi.getCategory() != Category.PRIMITIVE ) {
 			   throw new UDFArgumentException("NumericRange takes 1 to 3 integer arguments");
 			}
 		}

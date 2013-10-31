@@ -16,12 +16,6 @@ package brickhouse.hbase;
  *
  **/
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
@@ -30,63 +24,71 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+
 /**
- *   Simple UDF for doing single PUT into HBase table ..
- *  Not intended for doing massive reads from HBase,
- *   but only when relatively few rows are being read.  
- *   
+ *  Simple UDF for doing single PUT into HBase table.
+ *  NOTE: Not intended for doing massive reads from HBase, but only when relatively few rows are being read.
+ *
  */
 @Description(name="hbase_put",
-value = "_FUNC_(table,key,family) - Do a single HBase Put on a table " 
+    value = "string _FUNC_(config, map<string, string> key_value) - \n" +
+        "string _FUNC_(config, key, value) - Do a HBase Put on a table. " +
+        " Config must contain zookeeper \n" +
+        "quorum, table name, column, and qualifier. Example of usage: \n" +
+        "  hbase_put(map('hbase.zookeeper.quorum', 'hb-zoo1,hb-zoo2', \n" +
+        "                'table_name', 'metrics', \n" +
+        "                'family', 'c', \n" +
+        "                'qualifier', 'q'), \n" +
+        "            'test.prod.visits.total', \n" +
+        "            '123456') "
 )
 public class PutUDF extends UDF {
-	private static final Logger LOG = Logger.getLogger( PutUDF.class);
-	private static Map<String,HTable> htableMap = new HashMap<String,HTable>();
-	private static Configuration config = new Configuration(true);
-	
-	static private byte[] FAMILY = "c".getBytes();
-	static private byte[] QUALIFIER = "q".getBytes();
-	
+  private static final Logger LOG = Logger.getLogger(PutUDF.class);
 
-	
-	public String evaluate( String tableName, String key, String value) {
-		try {
-	       HTable table = getHTable( tableName);
-	       Put thePut = new Put( key.getBytes());
-	       thePut.add( FAMILY, QUALIFIER, value.getBytes());
-	       
-	       table.put(thePut);
-	       return "Put " + key + ":" + value;
-		} catch(Exception exc ) {
-			LOG.error( "Error while doing HBase Puts");
-			
-			 ///LOG.error(" Error while trying HBase PUT ",exc);
-			 throw new RuntimeException(exc);
-		}
-		
-		
-	}
-	
-	private HTable getHTable(String tableName ) throws IOException {
-	   HTable table = htableMap.get( tableName);
-	   if(table == null) {
-		   config = new Configuration(true);
-		   Iterator<Entry<String,String>> iter = config.iterator();
-		   while( iter.hasNext()  ) {
-			  Entry<String,String> entry =  iter.next(); 
-			  LOG.info(" BEFORE CONFIG = " + entry.getKey() + " == " + entry.getValue() );
-		   }
-		   config.set("hbase.zookeeper.quorum", "jobs-dev-zoo1,jobs-dev-zoo2,jobs-dev-zoo3");
-		   Configuration hbConfig = HBaseConfiguration.create( config);
-		    iter = hbConfig.iterator();
-		   while( iter.hasNext()  ) {
-			  Entry<String,String> entry =  iter.next(); 
-			  LOG.info(" AFTER CONFIG = " + entry.getKey() + " == " + entry.getValue() );
-		   }
-		  table =   new HTable( hbConfig, tableName);
-		  htableMap.put( tableName, table);
-	   }
-	
-	   return table;
-	}
+
+
+  public String evaluate(Map<String, String> configMap, String key, String value) {
+    HTableFactory.checkConfig(configMap);
+
+    try {
+      HTable table = HTableFactory.getHTable(configMap);
+      Put thePut = new Put(key.getBytes());
+      thePut.add(configMap.get(HTableFactory.FAMILY_TAG).getBytes(), configMap.get(HTableFactory.QUALIFIER_TAG).getBytes(), value.getBytes());
+
+      table.put(thePut);
+      table.flushCommits();
+      return "Put " + key + ":" + value;
+    } catch(Exception exc) {
+      LOG.error("Error while doing HBase Puts");
+      throw new RuntimeException(exc);
+    }
+  }
+
+  public String evaluate(Map<String, String> configMap, Map<String, String> keyValueMap) {
+    HTableFactory.checkConfig(configMap);
+
+    try {
+      List<Put> putList = new ArrayList<Put>();
+      for (Map.Entry<String, String> keyValue : keyValueMap.entrySet()) {
+        Put thePut = new Put(keyValue.getKey().getBytes());
+        thePut.add(configMap.get(HTableFactory.FAMILY_TAG).getBytes(),
+                   configMap.get(HTableFactory.QUALIFIER_TAG).getBytes(),
+                   keyValue.getValue().getBytes());
+        putList.add(thePut);
+      }
+
+      HTable table = HTableFactory.getHTable(configMap);
+      table.put(putList);
+      table.flushCommits();
+      return "Put " + keyValueMap.toString();
+    } catch(Exception exc) {
+      LOG.error("Error while doing HBase Puts");
+      throw new RuntimeException(exc);
+    }
+  }
+
+
 }

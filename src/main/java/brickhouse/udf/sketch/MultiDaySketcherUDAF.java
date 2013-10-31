@@ -47,6 +47,8 @@ import brickhouse.analytics.uniques.SketchSet;
 /**
  * XXX Snarfed from multiday counter ...
  *  TODO write one UDF which can be configured to sketch or count
+ *  TODO Generalize to represent other periods besides Days
+ *  TODO 
  *  XXX Probably needs Const object inspectors 
  *  
  * Count and count uniques for several day periods 

@@ -54,7 +54,6 @@ public class SketchSetUDAF extends AbstractGenericUDAFResolver {
   @Override
   public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
       throws SemanticException {
-	  ///  XXX if Type is array, then do merge sketching instead
     return new SketchSetUDAFEvaluator();
   }
 

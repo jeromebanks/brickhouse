@@ -32,7 +32,7 @@ public class TimeSeriesTest {
 		
 		List ts = Arrays.asList( scoreList);
 		
-		List<Double> avgList = mvnAvg.evaluate(  ts, 7);
+		List<Double> avgList = mvnAvg.evaluate(  ts, 3);
 		
 		for(int i=0; i< avgList.size(); ++i) {
 			System.out.println(" mvn Avg " + i + " == " + avgList.get(i));
@@ -87,4 +87,48 @@ public class TimeSeriesTest {
 		Assert.assertEquals("2055:2055", barackSalt);
 		
 	}
+
+    @Test
+    public void testMovingStdevStr() throws UDFArgumentException {
+        String[] scoreList = scoreListStr.split(  ",");
+        System.out.println(" Score List size = " + scoreList.length);
+
+        MovingStdevUDF MovingStdev = new MovingStdevUDF();
+        MovingStdev.initialize( new ObjectInspector[] {
+                ObjectInspectorFactory.getStandardListObjectInspector( PrimitiveObjectInspectorFactory.javaStringObjectInspector ),
+                PrimitiveObjectInspectorFactory.javaIntObjectInspector  } );
+
+        List ts = Arrays.asList( scoreList);
+
+        List<Double> avgList = MovingStdev.evaluate(  ts, 2);
+
+        for(int i=0; i< avgList.size(); ++i) {
+            System.out.println(" rolling std dev " + i + " == " + avgList.get(i));
+        }
+
+    }
+
+    @Test
+    public void testMovingStdevDouble() throws UDFArgumentException {
+        String[] scoreList = scoreListStr.split( ",");
+
+        MovingStdevUDF movingStdev = new MovingStdevUDF();
+        movingStdev.initialize( new ObjectInspector[] {
+                ObjectInspectorFactory.getStandardListObjectInspector( PrimitiveObjectInspectorFactory.javaDoubleObjectInspector ),
+                PrimitiveObjectInspectorFactory.javaIntObjectInspector  } );
+
+
+        List ts = new ArrayList<Double>();
+        for(int i=0; i<scoreList.length; ++i ) {
+            Double dblScore =  Double.parseDouble(scoreList[i]);
+            ts.add(dblScore);
+        }
+
+        List<Double> avgList = movingStdev.evaluate(  ts, 7);
+
+        for(int i=0; i< avgList.size(); ++i) {
+            System.out.println(" rolling std dev " + i + " == " + avgList.get(i));
+        }
+
+    }
 }

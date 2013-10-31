@@ -28,6 +28,7 @@ import org.apache.hadoop.hive.ql.exec.UDF;
  *      ( ie. modulo 1000 )
  *
  */
+@Deprecated
 public class SaltedBigIntUDF extends UDF {
     private DecimalFormat saltFormat = new DecimalFormat("0000");
 

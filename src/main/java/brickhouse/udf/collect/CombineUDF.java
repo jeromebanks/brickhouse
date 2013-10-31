@@ -16,11 +16,9 @@ package brickhouse.udf.collect;
  *
  **/
 
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
@@ -31,9 +29,11 @@ import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector;
 
 /**
- *   UDF for combining two lists or two maps together
+ *   UDF for combining two lists or two maps together.
  *
  */
 
@@ -42,46 +42,43 @@ value = "_FUNC_(a,b) - Returns a combined list of two lists, or a combined map o
 )
 public class CombineUDF extends GenericUDF {
 	private Category category;
-	private ListObjectInspector listInspector;
-	private MapObjectInspector mapInspector;
-
-	public List evaluate( List l1, List l2 ) {
-		ArrayList newList = new ArrayList();
-		if(l1 != null && l1.size() > 0)
-			newList.addAll( l1);
-		
-		if(l2 != null && l2.size() > 0)
-			newList.addAll( l2);
-		
-		return newList;
-	}
-	
-	public Map evaluate( Map m1, Map m2) {
-		HashMap newMap = new HashMap();
-		if( m1 != null && m1.size() > 0)
-			for(Object k : m1.keySet()) {
-				newMap.put( k, m1.get(k));
-			}
-		 
-		if( m2 != null && m2.size() > 0)
-			for(Object k : m2.keySet()) {
-				newMap.put( k, m2.get(k));
-			}
-		return newMap;
-	}
+	private StandardListObjectInspector stdListInspector;
+	private StandardMapObjectInspector stdMapInspector;
+	private ListObjectInspector[] listInspectorList;
+	private MapObjectInspector[] mapInspectorList;
 
 	@Override
 	public Object evaluate(DeferredObject[] args) throws HiveException {
 		if( category == Category.LIST) {
-			List theList = listInspector.getList( args[0].get());
-			for(int i=1;  i<args.length;++i) {
-				theList = evaluate(theList, listInspector.getList(args[i].get()));
+			
+			int currSize=0;
+			Object theList = stdListInspector.create(currSize);
+			int lastIdx = 0;
+			for(int i=0;  i<args.length;++i) {
+				List addList = listInspectorList[i].getList( args[i].get() );
+				currSize += addList.size();
+				stdListInspector.resize(theList, currSize );
+			    
+				for( int j=0; j< addList.size(); ++j) {
+					Object uninspObj = addList.get(j);
+					Object stdObj  = ObjectInspectorUtils.copyToStandardObject(uninspObj, listInspectorList[i].getListElementObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+					stdListInspector.set( theList, lastIdx + j, stdObj);
+				}
+				lastIdx += addList.size();
 			}
 			return theList;
 		} else if( category == Category.MAP) {
-			Map theMap = mapInspector.getMap( args[0].get());
-			for(int i=1;  i<args.length;++i) {
-				theMap = evaluate(theMap, mapInspector.getMap(args[i].get()));
+			Object theMap = stdMapInspector.create();
+			for(int i=0;  i<args.length;++i) {
+				if(args[i].get() != null) {
+				   Map addMap = mapInspectorList[i].getMap( args[i].get() );
+				   for( Object uninspObj : addMap.entrySet() ) {
+					  Map.Entry uninspEntry = (Entry) uninspObj;
+					  Object stdKey = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getKey(), mapInspectorList[i].getMapKeyObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+					  Object stdVal = ObjectInspectorUtils.copyToStandardObject(uninspEntry.getValue(), mapInspectorList[i].getMapValueObjectInspector(), ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+					  stdMapInspector.put( theMap, stdKey, stdVal);
+				  }
+			   }
 			}
 			return theMap;
 		} else {
@@ -107,26 +104,37 @@ public class CombineUDF extends GenericUDF {
 		if( args.length < 2) {
 			throw new UDFArgumentException("Usage: combine takes 2 or more maps or lists, and combines the result");
 		}
-		ObjectInspector first = ObjectInspectorUtils.getStandardObjectInspector(args[0] );
+		ObjectInspector first = args[0];
+		this.category = first.getCategory();
 		
-		if(first.getCategory() == Category.LIST) {
-			category = first.getCategory();
-			listInspector = (ListObjectInspector)first;
-		} else if( first.getCategory() == Category.MAP) {
-			category = first.getCategory();
-			mapInspector = (MapObjectInspector)first;
+		if(category == Category.LIST) {
+			this.listInspectorList = new ListObjectInspector[ args.length];
+			this.listInspectorList[0] = (ListObjectInspector)first;
+		    for(int i=1; i<args.length; ++i) {
+			   ObjectInspector argInsp = args[i];
+			   if( !ObjectInspectorUtils.compareTypes(first, argInsp)) {
+				 throw new UDFArgumentException("Combine must either be all maps or all lists of the same type");
+			   }
+			   this.listInspectorList[ i ] = (ListObjectInspector) argInsp;
+		    }
+		    this.stdListInspector = (StandardListObjectInspector) ObjectInspectorUtils.getStandardObjectInspector(first,ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+		    return stdListInspector;
+		} else if( category == Category.MAP) {
+			this.mapInspectorList = new MapObjectInspector[ args.length];
+			this.mapInspectorList[0] = (MapObjectInspector)first;
+		    for(int i=1; i<args.length; ++i) {
+			   ObjectInspector argInsp = args[i];
+			   if( !ObjectInspectorUtils.compareTypes(first, argInsp)) {
+				 throw new UDFArgumentException("Combine must either be all maps or all lists of the same type");
+			   }
+			   this.mapInspectorList[ i ] = (MapObjectInspector) argInsp;
+		    }
+		    this.stdMapInspector = (StandardMapObjectInspector) ObjectInspectorUtils.getStandardObjectInspector(first,ObjectInspectorUtils.ObjectInspectorCopyOption.JAVA);
+		    return stdMapInspector;
 		} else {
 			throw new UDFArgumentException(" combine only takes maps or lists.");
 		}
-		//// Check that the type in it is all the same type ..
-		//// Check that the are all the same type ...
-		for(int i=1; i<args.length; ++i) {
-			ObjectInspector argInsp = args[i];
-			if(argInsp.getCategory() != category) {
-				throw new UDFArgumentException("Combine must either be all maps or all lists");
-			}
-		}
-		return first;
+		
 	}
 	
 }

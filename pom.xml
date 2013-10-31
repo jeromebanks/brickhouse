@@ -4,10 +4,11 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.2-SNAPSHOT</version>
-	<name>GitHub Maven Plugin Example</name>
-	<description>Project to demonstrate GitHub Maven plugins</description>
-	<url>https://github.com/klout/github-maven-example</url>
+	<version>0.5.5</version>
+	<packaging>jar</packaging>
+	<name>Brickhouse</name>
+	<description>Extensions of Hive for the Data Developer</description>
+	<url>https://github.com/klout/brickhouse</url>
 
 	<issueManagement>
 		<url>https://github.com/klout/brickhouse/issues</url>
@@ -41,49 +42,11 @@
 	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
        <apache.hadoop.version>0.20.2</apache.hadoop.version>
        <apache.hbase.version>0.92.1</apache.hbase.version>
-	   <apache.hive.version>0.9.0</apache.hive.version>
+	   <apache.hive.version>0.10.0</apache.hive.version>
 	</properties>
 
 	<build>
 		<plugins>
-				<!--
-			<plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>downloads-maven-plugin</artifactId>
-				<version>0.6</version>
-				<configuration>
-					<description>Official ${project.name} build of the ${project.version} release</description>
-					<override>true</override>
-					<includeAttached>true</includeAttached>
-					<server>github</server>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>upload</goal>
-						</goals>
-						<phase>install</phase>
-					</execution>
-				</executions>
-			</plugin>
-    		<plugin>
-		        <groupId>com.github.github</groupId>
-	            <artifactId>site-maven-plugin</artifactId>
-				<version>0.7</version>
-				<configuration>
-					<message>Building site for ${project.version}</message>
-					<server>github</server>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>site</goal>
-						</goals>
-						<phase>site</phase>
-					</execution>
-				</executions>
-			</plugin>
-				-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
@@ -159,6 +122,21 @@
 					</execution>
 				</executions>
 			</plugin>
+				<!--
+			<plugin>
+			   <groupId>org.apache.maven.plugins</groupId>
+			   <artifactId>maven-gpg-plugin</artifactId>
+			   <executions>
+			     <execution>
+			       <id>sign-artifacts</id>
+			       <phase>verify</phase>
+			       <goals>
+			         <goal>sign</goal>
+			       </goals>
+			     </execution>
+			   </executions>
+			 </plugin>
+			 -->
 		</plugins>
 	</build>
 
@@ -182,6 +160,12 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${apache.hive.version}</version>
+            <exclusions>
+              <exclusion>
+               <groupId>javax.jdo</groupId>
+               <artifactId>jdo2-api</artifactId>
+              </exclusion>
+            </exclusions> 
         </dependency>
 
         <dependency>
@@ -197,13 +181,6 @@
         </dependency>
 		
 	    <dependency>
-	       <groupId>javax.jdo</groupId>
-	       <artifactId>jdo2-api</artifactId>
-		   <version>2.3-eb</version>
-		   <scope>test</scope>
-        </dependency>
-
-	    <dependency>
 	       <groupId>com.google.guava</groupId>
 	       <artifactId>guava</artifactId>
 	       <version>11.0.1</version>
@@ -215,36 +192,48 @@
 	       <version>2.1</version>
 	    </dependency>
 
+        <!--
+           Depend on streamlib 
+		     for  HyperLogLog 
+		     implementation
+		  -->
+	    <dependency>
+	       <groupId>com.clearspring.analytics</groupId>
+	       <artifactId>stream</artifactId>
+	       <version>2.3.0</version>
+	    </dependency>
 
 
 
-
-
-
-        <!-- Needed for Hive unit tests -->
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-cli</artifactId>
-            <version>${apache.hive.version}</version>
-            <scope>test</scope>
-        </dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.8</version>
 			<scope>test</scope>
 		</dependency>
+
+
 	</dependencies>
 
+<!--
+    <distributionManagement>
+      <repository>
+	    <id>sonatype-nexus-staging</id>
+	     <name>Nexus Staging Repository</name>
+	     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      </repository>
+  </distributionManagement>
+  -->
+
   <distributionManagement>
-   <repository>
+    <repository>
       <id>central</id>
-	  <name>klout-repo-releases</name>
-	   <url>http://maven.klout:8081/artifactory/libs-release-local</url>
-   </repository>
-   <snapshotRepository>
+      <name>maven-repo-releases</name>
+      <url>http://maven.klout:8081/artifactory/libs-release-local</url>
+    </repository>
+    <snapshotRepository>
       <id>snapshots</id>
-      <name>klout-repo-snapshots</name>
+      <name>maven-repo-snapshots</name>
       <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
