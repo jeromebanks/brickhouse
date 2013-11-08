@@ -1,0 +1,16 @@
+
+Current Version is 0.5.5
+------------------------
+Add to your pom.xml to pull from public repos
+
+ <dependency>
+    <groupId>com.klout</groupId>
+    <artifactId>brickhouse</artifactId>
+    <version>0.5.5</version>
+ </dependency>
+
+
+
+
+
+
