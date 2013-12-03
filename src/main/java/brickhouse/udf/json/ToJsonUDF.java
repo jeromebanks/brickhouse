@@ -98,20 +98,24 @@ public class ToJsonUDF extends GenericUDF {
 
 		@Override
 		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
-			gen.writeStartObject();
-			Map map = mapInspector.getMap(obj);
-			Iterator<Map.Entry> iter = map.entrySet().iterator();
-			while( iter.hasNext())	 {
-				Map.Entry entry = iter.next();
-				String keyJson = keyObjectInspector.getPrimitiveJavaObject(entry.getKey());
-				if( convertFlag) {
-					gen.writeFieldName( FromJsonUDF.ToCamelCase(keyJson));
-				} else {
-					gen.writeFieldName( keyJson);
+			if( obj == null) {
+				gen.writeNull();
+			} else {
+				gen.writeStartObject();
+				Map map = mapInspector.getMap(obj);
+				Iterator<Map.Entry> iter = map.entrySet().iterator();
+				while( iter.hasNext())	 {
+					Map.Entry entry = iter.next();
+					String keyJson = keyObjectInspector.getPrimitiveJavaObject(entry.getKey());
+					if( convertFlag) {
+						gen.writeFieldName( FromJsonUDF.ToCamelCase(keyJson));
+					} else {
+						gen.writeFieldName( keyJson);
+					}
+				    valueInspector.generateJson( gen, entry.getValue() );
 				}
-			    valueInspector.generateJson( gen, entry.getValue() );
+				gen.writeEndObject();
 			}
-			gen.writeEndObject();
 		}
 
 	}
