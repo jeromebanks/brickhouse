@@ -140,6 +140,19 @@
 		</plugins>
 	</build>
 
+  <reporting>
+      <plugins>
+       <plugin>
+       <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.10</version>
+       <configuration>
+       <configLocation>maven_checks.xml</configLocation>
+      </configuration>
+     </plugin>
+   </plugins>
+ </reporting>
+
 	<dependencies>
 
         <!-- Hive -->
@@ -215,27 +228,12 @@
 
 	</dependencies>
 
-<!--
     <distributionManagement>
       <repository>
 	    <id>sonatype-nexus-staging</id>
 	     <name>Nexus Staging Repository</name>
 	     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
       </repository>
-  </distributionManagement>
-  -->
-
-  <distributionManagement>
-    <repository>
-      <id>central</id>
-      <name>maven-repo-releases</name>
-      <url>http://maven.klout:8081/artifactory/libs-release-local</url>
-    </repository>
-    <snapshotRepository>
-      <id>snapshots</id>
-      <name>maven-repo-snapshots</name>
-      <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
-    </snapshotRepository>
   </distributionManagement>
 
 
