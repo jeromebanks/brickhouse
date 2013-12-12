@@ -1,3 +1,5 @@
+
+
 package brickhouse.udf.sketch;
 /**
  * Copyright 2012 Klout, Inc
@@ -24,6 +26,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.udf.generic.AbstractGenericUDAFResolver;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -69,25 +72,22 @@ public class UnionSketchSetUDAF extends AbstractGenericUDAFResolver {
 	  private MapObjectInspector partialMapOI;
 	  private LongObjectInspector partialMapHashOI;
 	  private StringObjectInspector partialMapStrOI;
+	  private int sketchSetSize = DEFAULT_SKETCH_SET_SIZE;
 
 
     static class SketchSetBuffer implements AggregationBuffer {
     	private SketchSet sketchSet;
     	
      
-    	public void init() {
+    	public void init(int size) {
     		if( sketchSet == null) {
-    			sketchSet = new SketchSet( DEFAULT_SKETCH_SET_SIZE);
+    			sketchSet = new SketchSet( size);
     		} else {
     			sketchSet.clear();
     		}
     	}
     	public void reset() {
-    		if( sketchSet == null) {
-    			sketchSet = new SketchSet( DEFAULT_SKETCH_SET_SIZE);
-    		} else {
-    			sketchSet.clear();
-    		}
+    	    sketchSet = null;
     	}
     	
     	
@@ -127,6 +127,16 @@ public class UnionSketchSetUDAF extends AbstractGenericUDAFResolver {
     	  } else {
     		  throw new HiveException(" union_sketch expecting list of strings as arg");
     	  }
+    	  
+          if( parameters.length > 1) {
+              //// get the sketch set size from the second parameters
+              if(!( parameters[1] instanceof ConstantObjectInspector ) ) {
+                 throw new HiveException("Sketch Set size must be a constant");
+              }
+              ConstantObjectInspector sizeOI = (ConstantObjectInspector) parameters[1];
+              
+              this.sketchSetSize = (Integer) sizeOI.getWritableConstantValue();
+          }
       } else { /// Mode m == Mode.PARTIAL2 || m == Mode.FINAL
     	   /// merge() gets called ... map is passed in ..
     	  this.partialMapOI = (MapObjectInspector) parameters[0];
@@ -151,7 +161,7 @@ public class UnionSketchSetUDAF extends AbstractGenericUDAFResolver {
     @Override
     public AggregationBuffer getNewAggregationBuffer() throws HiveException {
       SketchSetBuffer buff= new SketchSetBuffer();
-      buff.init();
+      buff.init(sketchSetSize);
       return buff;
     }
 

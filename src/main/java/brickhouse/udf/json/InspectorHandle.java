@@ -1,5 +1,7 @@
 package brickhouse.udf.json;
 
+import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +21,13 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.codehaus.jackson.JsonNode;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 
 public interface InspectorHandle {
@@ -41,6 +49,12 @@ public interface InspectorHandle {
     			return new InspectorHandle.PrimitiveHandle( (PrimitiveObjectInspector)insp);
     		}
     		return null;
+    	}
+    	
+    	static public InspectorHandle GenerateInspectorHandleFromTypeInfo( String typeStr ) throws UDFArgumentException {
+    	    TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(typeStr);
+    	    ObjectInspector objInsp = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
+    	    return GenerateInspectorHandle(objInsp);
     	}
     }
     /** 
@@ -174,6 +188,8 @@ public interface InspectorHandle {
 
 	class PrimitiveHandle implements InspectorHandle {
 		private PrimitiveCategory category;
+        private DateTimeFormatter isoFormatter = ISODateTimeFormat.dateTimeNoMillis();
+
 		
 		public PrimitiveHandle(PrimitiveObjectInspector insp) throws UDFArgumentException {
 			category = insp.getPrimitiveCategory();
@@ -195,6 +211,12 @@ public interface InspectorHandle {
 				return (short)jsonNode.getIntValue();
 			case BYTE:
 				return (byte)jsonNode.getIntValue();
+			case BINARY:
+				try {
+				  return jsonNode.getBinaryValue();
+				} catch(IOException ioExc) {
+					return jsonNode.toString();
+				}
 			case INT:
 				return jsonNode.getIntValue();
 			case FLOAT:
@@ -203,6 +225,9 @@ public interface InspectorHandle {
 				return jsonNode.getDoubleValue();
 			case BOOLEAN:
 				return jsonNode.getBooleanValue();
+			case TIMESTAMP:
+			    long time = isoFormatter.parseMillis( jsonNode.getTextValue());
+				return new Timestamp(time);
 			}
 			return null;
 		}

@@ -39,8 +39,10 @@ import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardConstantMapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
@@ -106,8 +108,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		public static final String BATCH_SIZE_TAG = "batch_size";
 		
 		// For PARTIAL1 and COMPLETE: ObjectInspectors for original data
-		private StringObjectInspector inputKeyOI;
-		private StringObjectInspector inputValOI;
+		private PrimitiveObjectInspector inputKeyOI;
+		private PrimitiveObjectInspector inputValOI;
 		// For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (list
 		// of objs)
 		private StandardListObjectInspector listKVOI;
@@ -136,8 +138,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 				HTableFactory.checkConfig( configMap);
 				
 				
-				inputKeyOI = (StringObjectInspector) parameters[1];
-				inputValOI = (StringObjectInspector) parameters[2];
+				inputKeyOI = (PrimitiveObjectInspector) parameters[1];
+				inputValOI = (PrimitiveObjectInspector) parameters[2];
 				
 				
 				try {
@@ -176,8 +178,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		@Override
 		public void iterate(AggregationBuffer agg, Object[] parameters)
 				throws HiveException {
-			String key = inputKeyOI.getPrimitiveJavaObject(parameters[1]);
-			String val = inputValOI.getPrimitiveJavaObject(parameters[2]);
+			String key = getByteString( parameters[1], inputKeyOI);
+			String val = getByteString( parameters[2], inputValOI);
 			
 			PutBuffer kvBuff = (PutBuffer) agg;
 			kvBuff.addKeyValue( key,val);
@@ -185,6 +187,27 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			if(kvBuff.putList.size() >= batchSize) {
 				batchUpdate( kvBuff, false);
 			}
+		}
+		
+		
+		/**
+		 * 
+		 * @param obj
+		 * @param objInsp
+		 * @return
+		 */
+		private String getByteString( Object obj, PrimitiveObjectInspector objInsp) {
+		    switch( objInsp.getPrimitiveCategory() ) {
+		    case STRING : 
+		        StringObjectInspector strInspector = (StringObjectInspector) objInsp;
+		        return strInspector.getPrimitiveJavaObject(obj);
+		    case BINARY : 
+		        BinaryObjectInspector binInspector = (BinaryObjectInspector) objInsp;
+		        return new String(binInspector.getPrimitiveJavaObject( obj));
+		    /// XXX TODO interpret other types, like ints or doubled 
+		     default :
+		        return null; 
+		    }
 		}
 		
 		protected void batchUpdate( PutBuffer  kvBuff, boolean flushCommits) throws HiveException { 

@@ -18,6 +18,7 @@ package brickhouse.udf.json;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BooleanObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.ByteObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspector;
@@ -45,10 +47,13 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspect
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.TimestampObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableConstantBooleanObjectInspector;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 /**
  *  Generate a JSON string from an arbitrary Hive structure.
@@ -324,6 +329,42 @@ public class ToJsonUDF extends GenericUDF {
 			}
 		}
 	}
+	
+	private class BinaryInspectorHandle implements InspectorHandle {
+		private BinaryObjectInspector binaryInspector;
+
+		public BinaryInspectorHandle( BinaryObjectInspector insp) {
+			binaryInspector = insp;
+		}
+		@Override
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
+			if( obj == null) {
+				gen.writeNull();
+			} else {
+				byte[] bytes = binaryInspector.getPrimitiveJavaObject(obj);
+				gen.writeBinary(bytes);
+			}
+		}
+	}
+	
+	private class TimestampInspectorHandle implements InspectorHandle {
+		private TimestampObjectInspector timestampInspector;
+		private DateTimeFormatter isoFormatter = ISODateTimeFormat.dateTimeNoMillis();
+
+		public TimestampInspectorHandle( TimestampObjectInspector insp) {
+			timestampInspector = insp;
+		}
+		@Override
+		public void generateJson(JsonGenerator gen, Object obj) throws JsonGenerationException, IOException {
+			if( obj == null) {
+				gen.writeNull();
+			} else {
+				Timestamp timestamp = timestampInspector.getPrimitiveJavaObject(obj);
+				String timeStr = isoFormatter.print( timestamp.getTime());
+				gen.writeString( timeStr);
+			}
+		}
+	}
 
 	private  InspectorHandle GenerateInspectorHandle( ObjectInspector insp) throws UDFArgumentException {
 		Category cat = insp.getCategory();
@@ -352,6 +393,8 @@ public class ToJsonUDF extends GenericUDF {
 				return new DoubleInspectorHandle((DoubleObjectInspector) primInsp);
 			} else if( primCat == PrimitiveCategory.BYTE) {
 				return new ByteInspectorHandle((ByteObjectInspector)primInsp);
+			} else if( primCat == PrimitiveCategory.BINARY) {
+			    return new BinaryInspectorHandle((BinaryObjectInspector)primInsp);
 			} 
 
 
