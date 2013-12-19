@@ -35,6 +35,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.io.Text;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -80,7 +81,7 @@ public class JsonMapUDF extends GenericUDF {
 		        throw new UDFArgumentException("json_map( jsonstring, typestring ) : typestring must be a constant");
 		    }
 		    ConstantObjectInspector constInsp = (ConstantObjectInspector) arguments[1];
-		    String typeStr = (String) constInsp.getWritableConstantValue();
+		    String typeStr = ((Text) constInsp.getWritableConstantValue()).toString();
 		    
 		    String[] types = typeStr.split(",");
 		    if( types.length != 2) {

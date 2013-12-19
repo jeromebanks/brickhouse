@@ -366,6 +366,7 @@ public class ToJsonUDF extends GenericUDF {
 		}
 	}
 
+
 	private  InspectorHandle GenerateInspectorHandle( ObjectInspector insp) throws UDFArgumentException {
 		Category cat = insp.getCategory();
 		if( cat == Category.MAP) {

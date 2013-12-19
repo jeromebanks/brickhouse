@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.io.Text;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -100,7 +101,7 @@ public class JsonSplitUDF extends GenericUDF {
     	  throw new UDFArgumentException("Usage : json_split( jsonstring, typestring) : typestring must be constant");
        }
        ConstantObjectInspector typeInsp = (ConstantObjectInspector) arguments[1];
-       String typeString = (String) typeInsp.getWritableConstantValue();
+       String typeString = ((Text) typeInsp.getWritableConstantValue()).toString();
        TypeInfo valType = TypeInfoUtils.getTypeInfoFromTypeString(typeString);
        
        ObjectInspector valInsp = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(valType);

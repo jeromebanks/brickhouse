@@ -351,33 +351,33 @@ public class SketchSetTest {
 	@Test 
 	public void testSetSimilarity() {
 		int numHashes = 200000;
-		List<String> a = new ArrayList<String>();
-		List<String> b = new ArrayList<String>();
-		List<String> c = new ArrayList<String>();
+		SketchSet a = new SketchSet();
+		SketchSet b = new SketchSet();
+		SketchSet c = new SketchSet();
 		
 		for(int i=0; i<numHashes; ++i) {
 			UUID randomUUID = UUID.randomUUID();
 			///System.out.println(" RandomUUID " + randomUUID.toString());
-			a.add( randomUUID.toString());
+			a.addItem( randomUUID.toString());
 			randomUUID = UUID.randomUUID();
-			b.add( randomUUID.toString());
+			b.addItem( randomUUID.toString());
 			randomUUID = UUID.randomUUID();
-			c.add( randomUUID.toString());
+			c.addItem( randomUUID.toString());
 		}
 		SetSimilarityUDF simUDF = new SetSimilarityUDF();
 		
-		double same = simUDF.evaluate(a, a);
+		double same = simUDF.evaluate(a.getMinHashItems(), a.getMinHashItems());
 		System.out.println( "Similarity with self = " + same);
 		Assert.assertEquals( 1.0, same, 0);
 		
-		double diff = simUDF.evaluate(a, b);
+		double diff = simUDF.evaluate(a.getMinHashItems(), b.getMinHashItems());
 		System.out.println( "Similarity with different  = " + diff);
 		Assert.assertEquals( 0, diff , 0.03); /// Might not be quite zero
 		
-		a.addAll( c);
-		b.addAll( c);
+		a.combine(c);
+		b.combine(c);
 		
-		double mixed = simUDF.evaluate( a, b);
+		double mixed = simUDF.evaluate( a.getMinHashItems(), b.getMinHashItems());
 		System.out.println("Similarity with mixed = " +mixed);
 		//// Should be about a third
 		Assert.assertEquals( 0.333333333, mixed, 0.03);
