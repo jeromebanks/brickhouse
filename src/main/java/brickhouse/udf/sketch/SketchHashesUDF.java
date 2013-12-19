@@ -19,7 +19,6 @@ package brickhouse.udf.sketch;
 import java.util.List;
 
 import org.apache.hadoop.hive.ql.exec.Description;
-import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -27,6 +26,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.log4j.Logger;
@@ -43,19 +43,8 @@ value = "_FUNC_(x) - Return the MD5 hashes associated with a KMV sketch set of s
 public class SketchHashesUDF extends GenericUDF {
 	private static final Logger LOG = Logger.getLogger( SketchHashesUDF.class);
 	private ListObjectInspector listInspector;
+	private StringObjectInspector listElemInspector;
 	private StandardListObjectInspector retInspector;
-
-	public List<Long> evaluate(List<Object> objList) {
-		SketchSet sketch = new SketchSet();
-	
-		for(Object item : objList) {
-			if(item !=null)
-				sketch.addItem(item.toString());
-			else
-				LOG.warn( "Item in " + objList + " is null");
-		}
-		return sketch.getMinHashes();
-	}
 
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
@@ -64,21 +53,21 @@ public class SketchHashesUDF extends GenericUDF {
 			return null;
 		}
 		List oldList = listInspector.getList(obj);
-		List newList = (List) retInspector.create(0);
-		StringObjectInspector strInspector = (StringObjectInspector) listInspector.getListElementObjectInspector();
+		int sketchSize = listInspector.getListLength( obj);
+		SketchSet sketchSet = new SketchSet(sketchSize );
 		for( Object oldObj : oldList) {
 			if( oldObj == null) {
 				LOG.warn(" Object in uninspected List is null");
 			} else {
-				String newStr = strInspector.getPrimitiveJavaObject(oldObj);
+				String newStr = listElemInspector.getPrimitiveJavaObject(oldObj);
 				if(newStr == null) 
 					LOG.warn(" inspected object is null !!! ");
 				else
-					newList.add( newStr);
+				    sketchSet.addItem( newStr);
 				
 			}
 		}
-		return evaluate(newList);
+		return sketchSet.getMinHashes();
 	}
 
 	@Override
@@ -89,7 +78,15 @@ public class SketchHashesUDF extends GenericUDF {
 	@Override
 	public ObjectInspector initialize(ObjectInspector[] arg0)
 			throws UDFArgumentException {
+	    if(arg0[0].getCategory() != Category.LIST ) {
+	       throw new UDFArgumentException("sketch_hashes takes a list of strings ");
+	    }
 		listInspector = (ListObjectInspector) arg0[0];
+		if( !(listInspector.getListElementObjectInspector() instanceof StringObjectInspector)) {
+	       throw new UDFArgumentException("sketch_hashes takes a list of strings ");
+		}
+		listElemInspector = (StringObjectInspector) listInspector.getListElementObjectInspector();
+		
 		retInspector =  ObjectInspectorFactory.getStandardListObjectInspector(PrimitiveObjectInspectorFactory.javaLongObjectInspector);
 		return retInspector;
 	}

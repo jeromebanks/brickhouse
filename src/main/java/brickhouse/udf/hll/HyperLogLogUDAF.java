@@ -72,10 +72,6 @@ public class HyperLogLogUDAF extends AbstractGenericUDAFResolver {
     public ObjectInspector init(Mode m, ObjectInspector[] parameters)
         throws HiveException {
       super.init(m, parameters);
-      LOG.info(" HyperLogLogUDAF.init() - Mode= " + m.name() );
-      for(int i=0; i<parameters.length; ++i) {
-        LOG.info(" ObjectInspector[ "+ i + " ] = " + parameters[0]);
-      }
       /// 
       if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
     	  //// iterate() gets called.. string is passed in

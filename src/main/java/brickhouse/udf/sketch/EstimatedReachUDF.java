@@ -74,12 +74,18 @@ public class EstimatedReachUDF extends GenericUDF {
 			StringObjectInspector strInspector = (StringObjectInspector) elemInspector;
 			String lastItem = strInspector.getPrimitiveJavaObject(uninspMax);
 			double reach = SketchSet.EstimatedReach( lastItem, maxItems);
-			return (long)(reach);
+			if( reach > listLen)
+			   return (long)(reach);
+			else 
+			   return (long)listLen;
 		case LONG :
 			LongObjectInspector longInspector = (LongObjectInspector) elemInspector;
 			long lastHash = longInspector.get(uninspMax);
 			double reachHash = SketchSet.EstimatedReach( lastHash, maxItems);
-			return (long)(reachHash);
+			if( reachHash > listLen)
+			   return (long)(reachHash);
+			else 
+			   return (long)listLen;
 		 default:
 			 /// should not happen
 			throw new HiveException("Unexpected category type");

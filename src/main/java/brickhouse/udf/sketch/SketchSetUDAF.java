@@ -17,7 +17,6 @@ package brickhouse.udf.sketch;
  **/
 
 
-import java.util.List;
 
 import java.util.Map;
 
@@ -26,16 +25,18 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.udf.generic.AbstractGenericUDAFResolver;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.log4j.Logger;
 
-import brickhouse.analytics.uniques.SketchSet;
 
 /**
  *  Construct a sketch set by aggregating over a a set of ID's
@@ -49,12 +50,21 @@ import brickhouse.analytics.uniques.SketchSet;
 public class SketchSetUDAF extends AbstractGenericUDAFResolver {
   private static final Logger LOG = Logger.getLogger(SketchSetUDAF.class);
   public static int DEFAULT_SKETCH_SET_SIZE =  5000;
+  static String SKETCH_SIZE_STR = "SKETCH_SIZE";
 
 
   @Override
   public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
-      throws SemanticException {
-    return new SketchSetUDAFEvaluator();
+          throws SemanticException {
+
+      if( !parameters[0].getTypeName().equals("string") 
+              && !parameters[0].getTypeName().equals("bigint")) {
+          throw new SemanticException("sketch_set UDAF only takes String or longs as values; not " + parameters[0].getTypeName());
+      }
+      if((parameters.length > 1) && !parameters[1].getTypeName().equals("int")) {
+          throw new SemanticException("Size of sketch must be an int; Got " + parameters[1].getTypeName());
+      }
+      return new SketchSetUDAFEvaluator();
   }
 
 
@@ -64,57 +74,26 @@ public class SketchSetUDAF extends AbstractGenericUDAFResolver {
 	  private MapObjectInspector partialMapOI;
 	  private LongObjectInspector partialMapHashOI;
 	  private StringObjectInspector partialMapStrOI;
+	  private int sketchSetSize = -1;
 
-
-    static class SketchSetBuffer implements AggregationBuffer {
-    	private SketchSet sketchSet;
-    	
-     
-    	public void init() {
-    		if( sketchSet == null) {
-    			sketchSet = new SketchSet( DEFAULT_SKETCH_SET_SIZE);
-    		} else {
-    			sketchSet.clear();
-    		}
-    	}
-    	public void reset() {
-    		if( sketchSet == null) {
-    			sketchSet = new SketchSet( DEFAULT_SKETCH_SET_SIZE);
-    		} else {
-    			sketchSet.clear();
-    		}
-    	}
-    	
-    	
-    	public List<String> getSketchItems() {
-           return sketchSet.getMinHashItems();
-    	}
-    	
-        public Map<Long,String> getPartialMap() {
-    	   return  sketchSet.getHashItemMap();
-        }
-        
-        public void addItem( String str) {
-           sketchSet.addItem( str) ;
-        }
-        public void addHash( Long hash, String str) {
-        	sketchSet.addHashItem( hash, str );
-        }
-      
-
-    }
 
     public ObjectInspector init(Mode m, ObjectInspector[] parameters)
         throws HiveException {
       super.init(m, parameters);
-      LOG.info(" SketchSetUDAF.init() - Mode= " + m.name() );
-      for(int i=0; i<parameters.length; ++i) {
-        LOG.info(" ObjectInspector[ "+ i + " ] = " + parameters[0]);
-      }
       /// 
       if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
     	  //// iterate() gets called.. string is passed in
     	  this.inputStrOI = (StringObjectInspector) parameters[0];
+    	  if( parameters.length > 1 && m == Mode.PARTIAL1) {
+    	     //// get the sketch set size from the second parameters
+    	    if(!( parameters[1] instanceof ConstantObjectInspector ) ) {
+    	        throw new HiveException("Sketch Set size must be a constant");
+    	    }
+    	    ConstantObjectInspector sizeOI = (ConstantObjectInspector) parameters[1];
+            this.sketchSetSize = ((IntWritable) sizeOI.getWritableConstantValue()).get();
+    	  } else {
+    	    sketchSetSize = DEFAULT_SKETCH_SET_SIZE;
+    	  }
       } else { /// Mode m == Mode.PARTIAL2 || m == Mode.FINAL
     	   /// merge() gets called ... map is passed in ..
     	  this.partialMapOI = (MapObjectInspector) parameters[0];
@@ -139,7 +118,7 @@ public class SketchSetUDAF extends AbstractGenericUDAFResolver {
     @Override
     public AggregationBuffer getNewAggregationBuffer() throws HiveException {
       SketchSetBuffer buff= new SketchSetBuffer();
-      buff.init();
+      buff.init(sketchSetSize);
       return buff;
     }
 
@@ -151,7 +130,7 @@ public class SketchSetUDAF extends AbstractGenericUDAFResolver {
       if (strObj != null) {
     	  String str = inputStrOI.getPrimitiveJavaObject( strObj);
           SketchSetBuffer myagg = (SketchSetBuffer) agg;
-          myagg.sketchSet.addItem( str);
+          myagg.addItem(str);
 
       }
     }
@@ -162,11 +141,29 @@ public class SketchSetUDAF extends AbstractGenericUDAFResolver {
     	/// Partial is going to be a map of strings and hashes 
         SketchSetBuffer myagg = (SketchSetBuffer) agg;
         
-        Map<Object,Object> partialResult = (Map<Object,Object>)  this.partialMapOI.getMap(partial);
-        for( Map.Entry entry : partialResult.entrySet()) {
-        	Long hash = this.partialMapHashOI.get( entry.getKey());
-        	String item = partialMapStrOI.getPrimitiveJavaObject( entry.getValue());
-        	myagg.addHash(hash, item);
+        if( partial != null) {
+            Map<Object,Object> partialResult = (Map<Object,Object>)  this.partialMapOI.getMap(partial);
+            if( partialResult !=null) {
+                //// Place SKETCH_SIZE into the partial map ...
+                if(myagg.getSize() == -1) {
+                  for( Map.Entry entry : partialResult.entrySet()) {
+                    Long hash = this.partialMapHashOI.get( entry.getKey());
+                    String item = partialMapStrOI.getPrimitiveJavaObject( entry.getValue());
+                    if(item.equals(SKETCH_SIZE_STR)) {
+                      this.sketchSetSize = (int)hash.intValue();
+                      myagg.init(sketchSetSize);
+                      break;
+                    }
+                  }
+                }
+                for( Map.Entry entry : partialResult.entrySet()) {
+                    Long hash = this.partialMapHashOI.get( entry.getKey());
+                    String item = partialMapStrOI.getPrimitiveJavaObject( entry.getValue());
+                    if(!item.equals(SKETCH_SIZE_STR)) {
+                      myagg.addHash(hash, item);
+                    }
+                }
+            }
         }
     }
 
