@@ -65,10 +65,6 @@ public class JsonMapUDF extends GenericUDF {
 		        || ((PrimitiveObjectInspector)arguments[0]).getPrimitiveCategory() != PrimitiveCategory.STRING) {
 			throw new UDFArgumentException("Usage : json_map( jsonstring, optional typestring) ");
 		}
-		if(!arguments[1].getCategory().equals( Category.PRIMITIVE)
-		        && ((PrimitiveObjectInspector)arguments[1]).getPrimitiveCategory() != PrimitiveCategory.STRING) {
-			throw new UDFArgumentException("Usage : json_map( jsonstring, optional typestring) ");
-		}
 		
 		stringInspector = (StringObjectInspector) arguments[0];
 		
