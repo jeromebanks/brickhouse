@@ -27,8 +27,6 @@ import org.codehaus.jackson.JsonNode;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-import com.sun.org.apache.xml.internal.security.utils.Base64;
-
 
 public interface InspectorHandle {
 	
