@@ -22,6 +22,7 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
@@ -49,32 +50,11 @@ import brickhouse.analytics.uniques.SketchSet;
 public class CombineSketchUDF extends GenericUDF {
 	private ListObjectInspector listInspectors[];
 	private PrimitiveCategory elemCategory;
+	private int sketchSetSize = SketchSetUDAF.DEFAULT_SKETCH_SET_SIZE;
 	
-	
-	public List<String> evaluate( List<String> strList1, List<String> strList2) {
-		SketchSet sketch1 = new SketchSet();
-		
-		if(strList1 != null) {
-			for(String item : strList1) {
-				sketch1.addItem( item);
-			}
-		}
-		
-		SketchSet sketch2 = new SketchSet();
-		
-		if(strList2 != null) {
-			for(String item : strList2) {
-				sketch2.addItem( item);
-			}
-		}
-		sketch1.combine( sketch2);
-		
-		return sketch1.getMinHashItems();
-	}
-
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-		SketchSet ss = new SketchSet();
+		SketchSet ss = new SketchSet(sketchSetSize);
 		for( int i=0; i< arg0.length; ++i) {
 			Object listObj = arg0[i].get();
 			int listLen = listInspectors[i].getListLength(listObj);
@@ -118,6 +98,17 @@ public class CombineSketchUDF extends GenericUDF {
 		}
 		if(arg0[0].getCategory() != Category.LIST) {
 			throw new UDFArgumentException("combine_sketch takes at least two arguments; a set of array<string> or a set of array<bigint>");
+		}
+		ObjectInspector lastInspector = arg0[arg0.length -1 ];
+		int listLen = arg0.length;
+		if( lastInspector.getCategory() == Category.PRIMITIVE 
+		        && ((PrimitiveObjectInspector)lastInspector).getPrimitiveCategory() == PrimitiveCategory.INT) {
+		   if(lastInspector instanceof ConstantObjectInspector)  {
+		       
+		   } else {
+		      throw new UDFArgumentException(" Sketch set size must an integer");
+		   }
+		       
 		}
 		this.listInspectors = new ListObjectInspector[ arg0.length];
 		this.listInspectors[0] = (ListObjectInspector) arg0[0];

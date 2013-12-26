@@ -27,9 +27,17 @@ public class SetSimilarityUDF extends UDF {
 		if( a.size() ==0 || b.size() == 0 ) {
 			return 0.0;
 		}
-		SketchSet sketchA = new SketchSet();
-		SketchSet sketchB = new SketchSet();
-		SketchSet sketchAUB = new SketchSet();
+		/// For now, assume min sketch size is 5000...
+		/// otherwise it is better to use array_intersect
+		/// XXX TODO convert to GenericUDF, so that it can be passed in 
+		///  as an argument
+		int sketchSize = Math.max( a.size() , b.size() );
+		if( sketchSize < SketchSetUDAF.DEFAULT_SKETCH_SET_SIZE)
+		    sketchSize = SketchSetUDAF.DEFAULT_SKETCH_SET_SIZE;
+		
+		SketchSet sketchA = new SketchSet(sketchSize);
+		SketchSet sketchB = new SketchSet(sketchSize);
+		SketchSet sketchAUB = new SketchSet(sketchSize);
 		
 		
 		for(String aStr : a) {
@@ -40,8 +48,6 @@ public class SetSimilarityUDF extends UDF {
 			sketchB.addItem( bStr);
 			sketchAUB.addItem( bStr);
 		}
-		
-		
 		
 		double aEst = sketchA.estimateReach();
 		double bEst = sketchB.estimateReach();

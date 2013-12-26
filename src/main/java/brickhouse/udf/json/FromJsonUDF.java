@@ -21,6 +21,7 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
@@ -54,12 +55,12 @@ public class FromJsonUDF extends GenericUDF {
 	private InspectorHandle inspHandle;
 	
 
-
-
 	@Override
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
 		try {
 		   String jsonString = jsonInspector.getPrimitiveJavaObject( arg0[0].get());
+		   if(jsonString == null)
+		       return null;
 		
 		    ObjectMapper jacksonParser = new ObjectMapper();
 			JsonNode jsonNode = jacksonParser.readTree( jsonString);
@@ -88,7 +89,18 @@ public class FromJsonUDF extends GenericUDF {
 		    throw new UDFArgumentException("from_json expects a JSON string and a template object");
 		}
 		jsonInspector = (StringObjectInspector) arg0[0];
-		inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandle( arg0[1]);
+		if( arg0[1].getCategory() == Category.PRIMITIVE
+		        && ((PrimitiveObjectInspector)arg0[1]).getPrimitiveCategory() == PrimitiveCategory.STRING) {
+		    if( !( arg0[1] instanceof ConstantObjectInspector) ) {
+		       throw new UDFArgumentException("typeinfo string must be constant");
+		    }
+		    ConstantObjectInspector typeInsp = (ConstantObjectInspector) arg0[1];
+		    
+		    String typeStr = typeInsp.getWritableConstantValue().toString();
+		    inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandleFromTypeInfo(typeStr);
+		} else {
+		  inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandle( arg0[1]);
+		}
 		
 		return inspHandle.getReturnType();
 	}
