@@ -6,7 +6,7 @@ package brickhouse.udf.collect;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *	http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,55 +21,56 @@ import java.util.List;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
-import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.*;
 
 /**
  *  Append an object to the end of an Array
- *
- * XXX Fix possible ObjectInspector problems
  */
 public class AppendArrayUDF extends GenericUDF {
 	private ListObjectInspector listInspector;
 	private PrimitiveObjectInspector listElemInspector;
+	private boolean returnWritables;
 	private PrimitiveObjectInspector primInspector;
 
 	@Override
-	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-		List objList = listInspector.getList( arg0[0].get());
-		Object primObj = primInspector.getPrimitiveJavaObject( arg0[1].get() );
-		objList.add( listElemInspector.copyObject( primObj));
-		
-		return objList;
+	public Object evaluate(DeferredObject[] args) throws HiveException {
+		List objList = listInspector.getList(args[0].get());
+		Object[] res = new Object[objList.size() + 1];
+		for (int i = 0; i < objList.size(); i++) {
+			Object o = objList.get(i);
+			res[i] = returnWritables ?
+					listElemInspector.getPrimitiveWritableObject(o) :
+					listElemInspector.getPrimitiveJavaObject(o);
+		}
+		Object obj = args[1].get();
+		res[res.length - 1] = returnWritables ?
+				primInspector.getPrimitiveWritableObject(obj) :
+				primInspector.getPrimitiveJavaObject(obj);
+		return res;
 	}
 
 	@Override
-	public String getDisplayString(String[] arg0) {
-		return "append_array()";
+	public String getDisplayString(String[] args) {
+		return "append_array(" + args[0] + ", " + args[1] + ")";
 	}
 
 	@Override
-	public ObjectInspector initialize(ObjectInspector[] arg0)
+	public ObjectInspector initialize(ObjectInspector[] params)
 			throws UDFArgumentException {
-		
-		if( ((ObjectInspector)arg0[0]).getCategory() != Category.LIST ) {
-			throw new UDFArgumentException("append_array expects a list as the first argument");
+		try {
+			listInspector = (ListObjectInspector) params[0];
+			listElemInspector = (PrimitiveObjectInspector) listInspector.getListElementObjectInspector();
+			returnWritables = listElemInspector.preferWritable();
+			primInspector = (PrimitiveObjectInspector) params[1];
+			if (listElemInspector.getPrimitiveCategory() != primInspector.getPrimitiveCategory()) {
+				throw new UDFArgumentException(
+						"append_array expects the list type to match the type of the value being appended");
+			}
+			return ObjectInspectorFactory.getStandardListObjectInspector(
+					ObjectInspectorUtils.getStandardObjectInspector(listElemInspector));
+		} catch (ClassCastException e) {
+			throw new UDFArgumentException("append_array expects a list as the first argument and a primitive " +
+					"as the second argument and the list type to match the type of the value being appended");
 		}
-		if( ((ObjectInspector)arg0[1]).getCategory() != Category.PRIMITIVE ) {
-			throw new UDFArgumentException("append_array expects a primitive as the second argument");
-		}
-		listInspector = (ListObjectInspector) arg0[0];
-		primInspector= (StringObjectInspector) arg0[1];
-		
-		if( listInspector.getListElementObjectInspector().getCategory() != Category.PRIMITIVE
-				|| ((PrimitiveObjectInspector)listInspector.getListElementObjectInspector()).getPrimitiveCategory() != primInspector.getPrimitiveCategory() ) {
-			throw new UDFArgumentException("append_array expects the list type to match the type of the value being appended");
-		}
-		listElemInspector = (PrimitiveObjectInspector) listInspector.getListElementObjectInspector();
-		
-		return listInspector;
 	}
 }
