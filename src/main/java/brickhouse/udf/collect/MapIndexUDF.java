@@ -31,13 +31,13 @@ import org.apache.log4j.Logger;
 
 
 /**
- *   Workaround for the Hive bug 
+ *   Workaround for the Hive bug
  *   https://issues.apache.org/jira/browse/HIVE-1955
- *   
+ *
  *  FAILED: Error in semantic analysis: Line 4:3 Non-constant expressions for array indexes not supported key
- *  
- *   
- *  Use instead of [ ] syntax,   
+ *
+ *
+ *  Use instead of [ ] syntax,
  *
  *
  */
@@ -45,47 +45,50 @@ public class MapIndexUDF extends GenericUDF {
 	private static final Logger LOG = Logger.getLogger( MapIndexUDF.class);
 	private PrimitiveObjectInspector keyInspector;
 	private MapObjectInspector mapInspector;
-	
-    public Double evaluate( Map<String,Double> map, String key) throws IOException	{
-    	/// XXX TODO For now, just assume an array of strings 
-    	/// XXX TODO In future, make a GenericUDF, so one can handle multiple types
-    	/// XXX
-        return map.get(key);
-    	
-    }
+	private PrimitiveObjectInspector mapKeyInspector;
+	private CreateWithPrimitive createKey;
 
-    @Override
-    public Object evaluate(DeferredObject[] arg0) throws HiveException {
-        Object mapObj = arg0[0].get();
-        Object keyObj = arg0[1].get();
-       
-        Object mapVal = mapInspector.getMapValueElement(mapObj, keyObj);
-        
-        return mapVal;
-    }
+@Override
+	public Object evaluate(DeferredObject[] args) throws HiveException {
+		Map<?, ?> map = mapInspector.getMap(args[0].get());
+		Object key = keyInspector.getPrimitiveJavaObject(args[1].get());
+		if (key == null) {
+			return map.get(null);
+		}
+		if (createKey != null) {
+			return map.get(createKey.create(key));
+		}
+		for (Map.Entry<?, ?> e : map.entrySet()) {
+			if (key.equals(mapKeyInspector.getPrimitiveJavaObject(e.getKey()))) {
+				return e.getValue();
+			}
+		}
+		return null;
+	}
 
-    @Override
-    public String getDisplayString(String[] arg0) {
-        return "map_index( " + arg0[0] + " , " + arg0[1] + ")";
-    }
+	@Override
+	public String getDisplayString(String[] args) {
+		return "map_index( " + args[0] + " , " + args[1] + ")";
+	}
 
-    @Override
-    public ObjectInspector initialize(ObjectInspector[] arg0)
-            throws UDFArgumentException {
-        if( arg0.length != 2) {
-            throw new UDFArgumentException("Usage : map_index( map, key)");
-        }
-        if( arg0[0].getCategory() != Category.MAP 
-                || arg0[1].getCategory() != Category.PRIMITIVE ) {
-            throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
-        }
-        mapInspector = (MapObjectInspector) arg0[0];
-        keyInspector = (PrimitiveObjectInspector) arg0[1];
-        if( ((PrimitiveObjectInspector)mapInspector.getMapKeyObjectInspector()).getPrimitiveCategory() 
-                != keyInspector.getPrimitiveCategory() ) {
-            throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
-        }
-        return mapInspector.getMapValueObjectInspector();
-    }
+	@Override
+	public ObjectInspector initialize(ObjectInspector[] args)
+			throws UDFArgumentException {
+		if( args.length != 2) {
+			throw new UDFArgumentException("Usage : map_index( map, key)");
+		}
+		if( args[0].getCategory() != Category.MAP
+				|| args[1].getCategory() != Category.PRIMITIVE ) {
+			throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
+		}
+		mapInspector = (MapObjectInspector) args[0];
+		mapKeyInspector = (PrimitiveObjectInspector) mapInspector.getMapKeyObjectInspector();
+		keyInspector = (PrimitiveObjectInspector) args[1];
+		if( mapKeyInspector.getPrimitiveCategory() != keyInspector.getPrimitiveCategory() ) {
+			throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
+		}
+		createKey = CreateWithPrimitive.getCreate(mapKeyInspector);
+		return mapInspector.getMapValueObjectInspector();
+	}
 
 }
