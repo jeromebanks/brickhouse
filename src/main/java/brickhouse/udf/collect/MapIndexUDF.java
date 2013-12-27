@@ -49,8 +49,8 @@ public class MapIndexUDF extends GenericUDF {
 	private CreateWithPrimitive createKey;
 
 @Override
-    public Object evaluate(DeferredObject[] args) throws HiveException {
-        Map<?, ?> map = mapInspector.getMap(args[0].get());
+	public Object evaluate(DeferredObject[] args) throws HiveException {
+		Map<?, ?> map = mapInspector.getMap(args[0].get());
 		Object key = keyInspector.getPrimitiveJavaObject(args[1].get());
 		if (key == null) {
 			return map.get(null);
@@ -63,32 +63,32 @@ public class MapIndexUDF extends GenericUDF {
 				return e.getValue();
 			}
 		}
-        return null;
-    }
+		return null;
+	}
 
-    @Override
-    public String getDisplayString(String[] args) {
-        return "map_index( " + args[0] + " , " + args[1] + ")";
-    }
+	@Override
+	public String getDisplayString(String[] args) {
+		return "map_index( " + args[0] + " , " + args[1] + ")";
+	}
 
-    @Override
-    public ObjectInspector initialize(ObjectInspector[] args)
-            throws UDFArgumentException {
-        if( args.length != 2) {
-            throw new UDFArgumentException("Usage : map_index( map, key)");
-        }
-        if( args[0].getCategory() != Category.MAP
-                || args[1].getCategory() != Category.PRIMITIVE ) {
-            throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
-        }
-        mapInspector = (MapObjectInspector) args[0];
+	@Override
+	public ObjectInspector initialize(ObjectInspector[] args)
+			throws UDFArgumentException {
+		if( args.length != 2) {
+			throw new UDFArgumentException("Usage : map_index( map, key)");
+		}
+		if( args[0].getCategory() != Category.MAP
+				|| args[1].getCategory() != Category.PRIMITIVE ) {
+			throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
+		}
+		mapInspector = (MapObjectInspector) args[0];
 		mapKeyInspector = (PrimitiveObjectInspector) mapInspector.getMapKeyObjectInspector();
 		keyInspector = (PrimitiveObjectInspector) args[1];
 		if( mapKeyInspector.getPrimitiveCategory() != keyInspector.getPrimitiveCategory() ) {
-            throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
-        }
+			throw new UDFArgumentException("Usage : map_index( map, key) - First argument must be a map, second must be a matching key");
+		}
 		createKey = CreateWithPrimitive.getCreate(mapKeyInspector);
-        return mapInspector.getMapValueObjectInspector();
-    }
+		return mapInspector.getMapValueObjectInspector();
+	}
 
 }
