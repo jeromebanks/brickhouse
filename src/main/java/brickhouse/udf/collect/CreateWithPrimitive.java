@@ -13,6 +13,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Boolean) o);
 				}
 			};
@@ -22,6 +23,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Byte) o);
 				}
 			};
@@ -31,6 +33,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Short) o);
 				}
 			};
@@ -40,6 +43,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Integer) o);
 				}
 			};
@@ -49,6 +53,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Long) o);
 				}
 			};
@@ -58,6 +63,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Float) o);
 				}
 			};
@@ -67,6 +73,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Double) o);
 				}
 			};
@@ -76,6 +83,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((String) o);
 				}
 			};
@@ -85,6 +93,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((Timestamp) o);
 				}
 			};
@@ -94,6 +103,7 @@ public abstract class CreateWithPrimitive {
 			return new CreateWithPrimitive() {
 				@Override
 				public Object create(Object o) {
+					if (o == null) return null;
 					return settableOI.create((byte[]) o);
 				}
 			};
