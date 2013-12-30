@@ -86,7 +86,7 @@ public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
     @Override
     public AggregationBuffer getNewAggregationBuffer() throws HiveException {
       HLLBuffer buff= new HLLBuffer();
-      buff.init( HyperLogLogUDAF.PRECISION);
+      buff.init( HyperLogLogUDAF.DEFAULT_PRECISION);
       return buff;
     }
 
