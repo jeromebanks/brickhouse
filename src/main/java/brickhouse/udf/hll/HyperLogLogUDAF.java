@@ -129,14 +129,8 @@ public class HyperLogLogUDAF extends AbstractGenericUDAFResolver {
       }
       
       // init output object inspectors
-      if (m == Mode.PARTIAL1 || m == Mode.PARTIAL2) {
-        // The intermediate result is a binary serialized hll
-    	  return  PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
-      } else {
-        // m == Mode.FINAL || m == Mode.COMPLETE 
-        // The final result is also a binary serialized hll
-    	  return  PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
-      }
+      // The partial aggregate type is the same as the final type
+      return  PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
     }
 
     @Override
