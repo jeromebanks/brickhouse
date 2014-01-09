@@ -72,18 +72,12 @@ public class MapKeyValuesUDF extends GenericUDF {
 	@Override
 	public Object evaluate(DeferredObject[] arguments) throws HiveException {
 		Map<?, ?> map= moi.getMap( arguments[0].get() );
-
-
-		List<List> array = new ArrayList<List>();
-		for( Object key : map.keySet() ) {
-			List kv = new ArrayList();
-			kv.add( key);
-			kv.add( map.get( key));
-			array.add( kv);
-
-
+		Object[] res = new Object[map.size()];
+		int i = 0;
+		for( Map.Entry e : map.entrySet() ) {
+			res[i++] = new Object[] {e.getKey(), e.getValue()};
 		}
-		return array;
+		return res;
 	}
 
 	@Override
