@@ -172,7 +172,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public T mergeValues(T left, T right) {
-			return left.compareTo(right) <= 0 ? left : right;
+			return left.compareTo(right) >= 0 ? left : right;
 		}
 	}
 }
