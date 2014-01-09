@@ -146,13 +146,18 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 
 		@Override
 		public void merge(Object key, V value) {
-			if (containsKey(key)) {
-				V oldValue = get(key);
-				V newValue = mergeValues(oldValue, value);
-				if (!oldValue.equals(newValue)) {
-					put(key, newValue);
+			V oldValue = get(key);
+			if (oldValue != null) {
+				// don't merge with null
+				// this method should be overridden in subclasses if special treatment of nulls is needed
+				if (value != null) {
+					V newValue = mergeValues(oldValue, value);
+					if (!oldValue.equals(newValue)) {
+						put(key, newValue);
+					}
 				}
 			} else {
+				// if key is absent in the map yet of previous value is null
 				put(key, value);
 			}
 		}
