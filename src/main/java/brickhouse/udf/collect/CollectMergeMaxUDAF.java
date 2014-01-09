@@ -39,7 +39,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Boolean mergeValues(Boolean left, Boolean right) {
-			return left || right;
+			return left ? left : right;
 		}
 	}
 
@@ -58,7 +58,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Byte mergeValues(Byte left, Byte right) {
-			return (byte) Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
@@ -77,7 +77,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Short mergeValues(Short left, Short right) {
-			return (short) Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
@@ -96,7 +96,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Integer mergeValues(Integer left, Integer right) {
-			return Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
@@ -115,7 +115,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Long mergeValues(Long left, Long right) {
-			return Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
@@ -134,7 +134,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Float mergeValues(Float left, Float right) {
-			return Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
@@ -153,7 +153,7 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 
 		@Override
 		public Double mergeValues(Double left, Double right) {
-			return Math.max(left, right);
+			return left >= right ? left : right;
 		}
 	}
 
