@@ -162,23 +162,4 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 			return new HashMap<Object, V>(this);
 		}
 	}
-
-	public class MyCollectMergeUDAFEvaluator extends CollectMergeUDAFEvaluator {
-		private final Class<? extends MergeAggBuffer> aggClass;
-
-		public MyCollectMergeUDAFEvaluator(Class<? extends MergeAggBuffer> aggClass) {
-			this.aggClass = aggClass;
-		}
-
-		@Override
-		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
-			try {
-				return aggClass.newInstance();
-			} catch (InstantiationException e) {
-				throw new RuntimeException(e);
-			} catch (IllegalAccessException e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
 }
