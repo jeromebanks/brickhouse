@@ -20,16 +20,22 @@ import static org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspe
 
 public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolver {
 
-	public abstract Map<PrimitiveCategory, Class<? extends MergeAggBuffer>> aggBufferClasses();
+	public abstract Map<PrimitiveCategory, Class<? extends CollectMergeUDAFEvaluator>> evaluators();
 
 	public CollectMergeUDAFEvaluator newEvaluator(PrimitiveCategory valueCategory) {
-		final Class<? extends MergeAggBuffer> aggClass = aggBufferClasses().get(valueCategory);
-		return new MyCollectMergeUDAFEvaluator(aggClass);
+		Class<? extends CollectMergeUDAFEvaluator> evaluatorClass = evaluators().get(valueCategory);
+		try {
+			return evaluatorClass.newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private String supportedTypes() {
 		String res = "";
-		for (PrimitiveCategory category : aggBufferClasses().keySet()) {
+		for (PrimitiveCategory category : evaluators().keySet()) {
 			res += ", " + category.name();
 		}
 		return res.substring(2);
@@ -55,7 +61,7 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 	}
 
 
-	public abstract class CollectMergeUDAFEvaluator<E> extends GenericUDAFEvaluator {
+	public static abstract class CollectMergeUDAFEvaluator<E> extends GenericUDAFEvaluator {
 
 		protected ObjectInspector keyOI;
 		protected PrimitiveObjectInspector valueOI;
@@ -112,7 +118,7 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 
 		@SuppressWarnings("unchecked")
 		private void merge(MergeAggBuffer agg, Object key, Object value) {
-			Object keyCopy = ObjectInspectorUtils.copyToStandardJavaObject(key, keyOI);
+			Object keyCopy = ObjectInspectorUtils.copyToStandardObject(key, keyOI);
 			E primValue = (E) valueOI.getPrimitiveJavaObject(value);
 			((MergeAggBuffer<E>) agg).merge(keyCopy, primValue);
 		}
@@ -124,8 +130,6 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 		void reset();
 
 		V mergeValues(V left, V right);
-
-		V defaultValue();
 
 		void merge(Object key, V value);
 
@@ -149,69 +153,13 @@ public abstract class AbstractCollectMergeUDAF extends AbstractGenericUDAFResolv
 					put(key, newValue);
 				}
 			} else {
-				put(key, mergeValues(defaultValue(), value));
+				put(key, value);
 			}
 		}
 
 		@Override
 		public Map<Object, V> copy() {
 			return new HashMap<Object, V>(this);
-		}
-	}
-
-	public static abstract class BooleanMergeAggBuffer extends HashMapMergeAggBuffer<Boolean> {
-		@Override
-		public Boolean defaultValue() {
-			return false;
-		}
-	}
-
-	public static abstract class ByteMergeAggBuffer extends HashMapMergeAggBuffer<Byte> {
-		@Override
-		public Byte defaultValue() {
-			return 0;
-		}
-	}
-
-	public static abstract class ShortMergeAggBuffer extends HashMapMergeAggBuffer<Short> {
-		@Override
-		public Short defaultValue() {
-			return 0;
-		}
-	}
-
-	public static abstract class IntMergeAggBuffer extends HashMapMergeAggBuffer<Integer> {
-		@Override
-		public Integer defaultValue() {
-			return 0;
-		}
-	}
-
-	public static abstract class LongMergeAggBuffer extends HashMapMergeAggBuffer<Long> {
-		@Override
-		public Long defaultValue() {
-			return 0L;
-		}
-	}
-
-	public static abstract class FloatMergeAggBuffer extends HashMapMergeAggBuffer<Float> {
-		@Override
-		public Float defaultValue() {
-			return 0.0f;
-		}
-	}
-
-	public static abstract class DoubleMergeAggBuffer extends HashMapMergeAggBuffer<Double> {
-		@Override
-		public Double defaultValue() {
-			return 0.0;
-		}
-	}
-
-	public static abstract class StringMergeAggBuffer extends HashMapMergeAggBuffer<String> {
-		@Override
-		public String defaultValue() {
-			return "";
 		}
 	}
 

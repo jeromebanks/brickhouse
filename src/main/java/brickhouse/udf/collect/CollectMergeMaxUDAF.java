@@ -1,6 +1,7 @@
 package brickhouse.udf.collect;
 
-import java.sql.Timestamp;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,24 +9,32 @@ import static org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspe
 import static org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory.*;
 
 public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
-	public CollectMergeMaxUDAF() {}
 
 	@Override
-	public Map<PrimitiveCategory, Class<? extends MergeAggBuffer>> aggBufferClasses() {
-		return new HashMap<PrimitiveCategory, Class<? extends MergeAggBuffer>>() {{
-			put(BOOLEAN, BooleanMergeMaxAggBuffer.class);
-			put(BYTE, ByteMergeMaxAggBuffer.class);
-			put(SHORT, ShortMergeMaxAggBuffer.class);
-			put(INT, IntMergeMaxAggBuffer.class);
-			put(LONG, LongMergeMaxAggBuffer.class);
-			put(FLOAT, FloatMergeMaxAggBuffer.class);
-			put(DOUBLE, DoubleMergeMaxAggBuffer.class);
-			put(STRING, StringMergeMaxAggBuffer.class);
-			put(TIMESTAMP, TimestampMergeMaxAggBuffer.class);
+	public Map<PrimitiveCategory, Class<? extends CollectMergeUDAFEvaluator>> evaluators() {
+		return new HashMap<PrimitiveCategory, Class<? extends CollectMergeUDAFEvaluator>>() {{
+			put(BOOLEAN, BooleanEvaluator.class);
+			put(BYTE, ByteEvaluator.class);
+			put(SHORT, ShortEvaluator.class);
+			put(INT, IntEvaluator.class);
+			put(LONG, LongEvaluator.class);
+			put(FLOAT, FloatEvaluator.class);
+			put(DOUBLE, DoubleEvaluator.class);
+			put(STRING, ComparableEvaluator.class);
+			put(TIMESTAMP, ComparableEvaluator.class);
 		}};
 	}
 
-	public static class BooleanMergeMaxAggBuffer extends BooleanMergeAggBuffer {
+	public static class BooleanEvaluator extends CollectMergeUDAFEvaluator {
+		public BooleanEvaluator() {}
+
+		@Override
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new BooleanMergeMaxAggBuffer();
+		}
+	}
+
+	public static class BooleanMergeMaxAggBuffer extends HashMapMergeAggBuffer<Boolean> {
 		public BooleanMergeMaxAggBuffer() {}
 
 		@Override
@@ -34,13 +43,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class ByteMergeMaxAggBuffer extends ByteMergeAggBuffer {
-		public ByteMergeMaxAggBuffer() {}
+
+	public static class ByteEvaluator extends CollectMergeUDAFEvaluator {
+		public ByteEvaluator() {}
 
 		@Override
-		public Byte defaultValue() {
-			return Byte.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new ByteMergeMaxAggBuffer();
 		}
+	}
+
+	public static class ByteMergeMaxAggBuffer extends HashMapMergeAggBuffer<Byte> {
+		public ByteMergeMaxAggBuffer() {}
 
 		@Override
 		public Byte mergeValues(Byte left, Byte right) {
@@ -48,13 +62,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class ShortMergeMaxAggBuffer extends ShortMergeAggBuffer {
-		public ShortMergeMaxAggBuffer() {}
+
+	public static class ShortEvaluator extends CollectMergeUDAFEvaluator {
+		public ShortEvaluator() {}
 
 		@Override
-		public Short defaultValue() {
-			return Short.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new ShortMergeMaxAggBuffer();
 		}
+	}
+
+	public static class ShortMergeMaxAggBuffer extends HashMapMergeAggBuffer<Short> {
+		public ShortMergeMaxAggBuffer() {}
 
 		@Override
 		public Short mergeValues(Short left, Short right) {
@@ -62,13 +81,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class IntMergeMaxAggBuffer extends IntMergeAggBuffer {
-		public IntMergeMaxAggBuffer() {}
+
+	public static class IntEvaluator extends CollectMergeUDAFEvaluator {
+		public IntEvaluator() {}
 
 		@Override
-		public Integer defaultValue() {
-			return Integer.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new IntMergeMaxAggBuffer();
 		}
+	}
+
+	public static class IntMergeMaxAggBuffer extends HashMapMergeAggBuffer<Integer> {
+		public IntMergeMaxAggBuffer() {}
 
 		@Override
 		public Integer mergeValues(Integer left, Integer right) {
@@ -76,13 +100,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class LongMergeMaxAggBuffer extends LongMergeAggBuffer {
-		public LongMergeMaxAggBuffer() {}
+
+	public static class LongEvaluator extends CollectMergeUDAFEvaluator {
+		public LongEvaluator() {}
 
 		@Override
-		public Long defaultValue() {
-			return Long.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new LongMergeMaxAggBuffer();
 		}
+	}
+
+	public static class LongMergeMaxAggBuffer extends HashMapMergeAggBuffer<Long> {
+		public LongMergeMaxAggBuffer() {}
 
 		@Override
 		public Long mergeValues(Long left, Long right) {
@@ -90,13 +119,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class FloatMergeMaxAggBuffer extends FloatMergeAggBuffer {
-		public FloatMergeMaxAggBuffer() {}
+
+	public static class FloatEvaluator extends CollectMergeUDAFEvaluator {
+		public FloatEvaluator() {}
 
 		@Override
-		public Float defaultValue() {
-			return Float.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new FloatMergeMaxAggBuffer();
 		}
+	}
+
+	public static class FloatMergeMaxAggBuffer extends HashMapMergeAggBuffer<Float> {
+		public FloatMergeMaxAggBuffer() {}
 
 		@Override
 		public Float mergeValues(Float left, Float right) {
@@ -104,13 +138,18 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class DoubleMergeMaxAggBuffer extends DoubleMergeAggBuffer {
-		public DoubleMergeMaxAggBuffer() {}
+
+	public static class DoubleEvaluator extends CollectMergeUDAFEvaluator {
+		public DoubleEvaluator() {}
 
 		@Override
-		public Double defaultValue() {
-			return Double.MIN_VALUE;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new DoubleMergeMaxAggBuffer();
 		}
+	}
+
+	public static class DoubleMergeMaxAggBuffer extends HashMapMergeAggBuffer<Double> {
+		public DoubleMergeMaxAggBuffer() {}
 
 		@Override
 		public Double mergeValues(Double left, Double right) {
@@ -118,28 +157,22 @@ public class CollectMergeMaxUDAF extends AbstractCollectMergeUDAF {
 		}
 	}
 
-	public static class StringMergeMaxAggBuffer extends StringMergeAggBuffer {
-		public StringMergeMaxAggBuffer() {}
+
+	public static class ComparableEvaluator<T extends Comparable<? super T>> extends CollectMergeUDAFEvaluator {
+		public ComparableEvaluator() {}
 
 		@Override
-		public String mergeValues(String left, String right) {
-			return left.compareTo(right) <= 0 ? left : right;
+		public MergeAggBuffer getNewAggregationBuffer() throws HiveException {
+			return new ComparableMergeMaxAggBuffer<T>();
 		}
 	}
 
-	public static class TimestampMergeMaxAggBuffer extends HashMapMergeAggBuffer<Timestamp> {
-		public TimestampMergeMaxAggBuffer() {}
+	public static class ComparableMergeMaxAggBuffer<T extends Comparable<? super T>> extends HashMapMergeAggBuffer<T> {
+		public ComparableMergeMaxAggBuffer() {}
 
 		@Override
-		public Timestamp mergeValues(Timestamp left, Timestamp right) {
+		public T mergeValues(T left, T right) {
 			return left.compareTo(right) <= 0 ? left : right;
 		}
-
-		@Override
-		public Timestamp defaultValue() {
-			return MIN;
-		}
-
-		private static final Timestamp MIN = new Timestamp(Long.MIN_VALUE);
 	}
 }
