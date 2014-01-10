@@ -30,17 +30,12 @@ public class AppendArrayUDF extends GenericUDF {
 	private ListObjectInspector listInspector;
 	private PrimitiveObjectInspector listElemInspector;
 	private boolean returnWritables;
-	private CreateWithPrimitive createListElem;
 	private PrimitiveObjectInspector primInspector;
 
 	@Override
 	public Object evaluate(DeferredObject[] args) throws HiveException {
 		List objList = listInspector.getList(args[0].get());
 		Object objToAppend = args[1].get();
-		if (createListElem != null) {
-			objList.add(createListElem.create(primInspector.getPrimitiveJavaObject(objToAppend)));
-			return objList;
-		}
 		Object[] res = new Object[objList.size() + 1];
 		for (int i = 0; i < objList.size(); i++) {
 			Object o = objList.get(i);
@@ -70,13 +65,9 @@ public class AppendArrayUDF extends GenericUDF {
 				throw new UDFArgumentException(
 						"append_array expects the list type to match the type of the value being appended");
 			}
-			if ((createListElem = CreateWithPrimitive.getCreate(listElemInspector)) != null) {
-				return listInspector;
-			} else {
-				returnWritables = listElemInspector.preferWritable();
-				return ObjectInspectorFactory.getStandardListObjectInspector(
-						ObjectInspectorUtils.getStandardObjectInspector(listElemInspector));
-			}
+			returnWritables = listElemInspector.preferWritable();
+			return ObjectInspectorFactory.getStandardListObjectInspector(
+					ObjectInspectorUtils.getStandardObjectInspector(listElemInspector));
 		} catch (ClassCastException e) {
 			throw new UDFArgumentException("append_array expects a list as the first argument and a primitive " +
 					"as the second argument and the list type to match the type of the value being appended");
