@@ -181,6 +181,10 @@ public class HyperLogLogUDAF extends AbstractGenericUDAFResolver {
       
       try {
         HLLBuffer myagg = (HLLBuffer) agg;
+        if (!myagg.isReady()) {
+          return;
+        }
+        
         byte[] partialBuffer = this.partialBufferOI
             .getPrimitiveJavaObject(partial);
         myagg.merge(partialBuffer);

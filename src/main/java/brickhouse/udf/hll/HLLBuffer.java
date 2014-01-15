@@ -74,6 +74,10 @@ class HLLBuffer implements AggregationBuffer {
   }
 
   public byte[] getPartial() throws IOException {
+    if (hll == null) {
+      return null;
+    }
+    
     return hll.getBytes();
   }
 
