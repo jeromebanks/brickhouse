@@ -26,7 +26,7 @@ import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.cardinality.ICardinality;
 
-class HLLBuffer implements AggregationBuffer {
+public class HLLBuffer implements AggregationBuffer {
   private static final Logger LOG = Logger.getLogger(HLLBuffer.class);
   private ICardinality hll;
   private int precision;
