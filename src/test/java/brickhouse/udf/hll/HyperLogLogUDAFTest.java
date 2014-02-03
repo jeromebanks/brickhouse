@@ -14,6 +14,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.JavaBinaryObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.log4j.Logger;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -22,15 +23,15 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 import junit.framework.Assert;
 
+@Ignore("not ready yet")
 public class HyperLogLogUDAFTest {
   private static final Logger LOG = Logger.getLogger(HyperLogLogUDAFTest.class);
   
-  @Rule 
-  public TestName name = new TestName();
+  private static String TEST_HEADER = "\n************************************************************************\nRunning Test: ";
   
   @Test
   public void testSingleRowNullReturnsNull() throws HiveException {
-    LOG.info("Running Test: " + name.getMethodName());
+    LOG.info(TEST_HEADER + "testSingleRowNullReturnsNull");
     
     HyperLogLogUDAF udaf = new HyperLogLogUDAF();
     ObjectInspector[] inputOiList = new ObjectInspector[] {
@@ -57,6 +58,8 @@ public class HyperLogLogUDAFTest {
   
   @Test
   public void testMultipleRowNullReturnsNull() throws HiveException {
+    LOG.info(TEST_HEADER + "testMultipleRowNullReturnsNull");
+    
     HyperLogLogUDAF udaf = new HyperLogLogUDAF();
     ObjectInspector[] inputOiList1 = new ObjectInspector[] {
         PrimitiveObjectInspectorFactory.javaStringObjectInspector, 
@@ -103,7 +106,7 @@ public class HyperLogLogUDAFTest {
   
   @Test
   public void testSingleRowNonNullReturnsNonNull() throws HiveException {
-    LOG.info("Running Test: " + name.getMethodName());
+    LOG.info(TEST_HEADER + "testSingleRowNonNullReturnsNonNull");
     
     HyperLogLogUDAF udaf = new HyperLogLogUDAF();
     ObjectInspector[] inputOiList = new ObjectInspector[] {
@@ -129,7 +132,7 @@ public class HyperLogLogUDAFTest {
   }
   
   private void testCardinalityEstimateWithinBounds(Integer precision, Long uniqueCount) throws HiveException, IOException {
-    LOG.info("Running Test: " + name.getMethodName() + " - precision = " + precision + " - uniqueCount = " + uniqueCount);
+    LOG.info("testCardinalityEstimateWithinBounds - precision = " + precision + " - uniqueCount = " + uniqueCount);
     
     HyperLogLogUDAF udaf = new HyperLogLogUDAF();
     ObjectInspector[] inputOiList = new ObjectInspector[] {
@@ -180,16 +183,16 @@ public class HyperLogLogUDAFTest {
   
   @Test
   public void testCardinalityEstimateWithinBounds12() throws HiveException, IOException {
-    LOG.info("Running Test: " + name.getMethodName());
+    LOG.info(TEST_HEADER + "testCardinalityEstimateWithinBounds12");
     
-    testCardinalityEstimateWithinBounds(12, 100000L);
+    testCardinalityEstimateWithinBounds(12, 1000000L);
   }
   
   @Test
   public void testCardinalityEstimateWithinBounds16() throws HiveException, IOException {
-    LOG.info("Running Test: " + name.getMethodName());
+    LOG.info(TEST_HEADER + "testCardinalityEstimateWithinBounds16");
     
-    testCardinalityEstimateWithinBounds(16, 100000L);
+    testCardinalityEstimateWithinBounds(16, 1000000L);
   }
   
 }
