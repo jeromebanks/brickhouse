@@ -191,7 +191,7 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 					inputKeyOI = (PrimitiveObjectInspector)  ObjectInspectorUtils
 							.getStandardObjectInspector(parameters[0]);
 					inputValOI = ObjectInspectorUtils
-							.getStandardObjectInspector(parameters[0]);
+							.getStandardObjectInspector(parameters[1]);
 					return (StandardMapObjectInspector) ObjectInspectorFactory
 							.getStandardMapObjectInspector(inputKeyOI, inputValOI);
 				} else {
