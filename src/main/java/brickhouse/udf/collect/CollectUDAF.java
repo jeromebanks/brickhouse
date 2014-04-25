@@ -46,7 +46,6 @@ value = "_FUNC_(x) - Returns an array of all the elements in the aggregation gro
 public class CollectUDAF extends AbstractGenericUDAFResolver {
 
 
-	/// Snarfed from Hives CollectSet UDAF
 
 	@Override
 	public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
@@ -191,7 +190,7 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 					inputKeyOI = (PrimitiveObjectInspector)  ObjectInspectorUtils
 							.getStandardObjectInspector(parameters[0]);
 					inputValOI = ObjectInspectorUtils
-							.getStandardObjectInspector(parameters[0]);
+							.getStandardObjectInspector(parameters[1]);
 					return (StandardMapObjectInspector) ObjectInspectorFactory
 							.getStandardMapObjectInspector(inputKeyOI, inputValOI);
 				} else {
