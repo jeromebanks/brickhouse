@@ -46,7 +46,6 @@ value = "_FUNC_(x) - Returns an array of all the elements in the aggregation gro
 public class CollectUDAF extends AbstractGenericUDAFResolver {
 
 
-	/// Snarfed from Hives CollectSet UDAF
 
 	@Override
 	public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
