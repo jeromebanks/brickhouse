@@ -4,6 +4,7 @@ CREATE TEMPORARY FUNCTION array_index AS 'brickhouse.udf.collect.ArrayIndexUDF';
 CREATE TEMPORARY FUNCTION first_index AS 'brickhouse.udf.collect.FirstIndexUDF';
 CREATE TEMPORARY FUNCTION last_index AS 'brickhouse.udf.collect.LastIndexUDF';
 CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayIntersectUDF';
+CREATE TEMPORARY FUNCTION array_flatten AS 'brickhouse.udf.collect.ArrayFlattenUDF';
 CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
 CREATE TEMPORARY FUNCTION collect_merge_max AS 'brickhouse.udf.collect.CollectMergeMaxUDAF';
