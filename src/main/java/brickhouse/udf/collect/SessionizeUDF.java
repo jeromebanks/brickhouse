@@ -15,10 +15,11 @@ package brickhouse.udf.collect;
  * limitations under the License.
  *
  *
- *
- * Creates a session id for an index and a time stamp, default session length is 30 minute = 1800000 milliseconds
- * 
- **/
+ */
+
+/**
+ * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
+ */
 import java.util.UUID;
 
 import org.apache.hadoop.hive.ql.exec.Description;
@@ -26,7 +27,7 @@ import org.apache.hadoop.hive.ql.exec.UDF;
 
 @Description(
 		name="sessionize", 
-		value="_FUNC_(int, timestamp) - Returns a session id for the given id(int) and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
+		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
 		extended="SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
 
 public class SessionizeUDF extends UDF {
