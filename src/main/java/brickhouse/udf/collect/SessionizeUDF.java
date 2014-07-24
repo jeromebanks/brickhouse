@@ -15,19 +15,11 @@ package brickhouse.udf.collect;
  * limitations under the License.
  *
  *
- *
- *
- * select
- * 	sessionize(user_id, timestamp), user_id, time_stamp, event_info
- * 
- **/
+ */
 
-
-// YY: Does this belong in the date package? Maybe it'll fit better elsewhere.... hm....
-
-
-// for now, just implement sessionize(uid, ts)- but we probably need sessionize(uid, ts, tolerance) later on....
-
+/**
+ * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
+ */
 import java.util.UUID;
 
 import org.apache.hadoop.hive.ql.exec.Description;
@@ -35,42 +27,36 @@ import org.apache.hadoop.hive.ql.exec.UDF;
 
 @Description(
 		name="sessionize", 
-		value="_FUNC_(int, timestamp) - Returns a session id for the given id(int) and ts(long).",
+		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
 		extended="SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
 
 public class SessionizeUDF extends UDF {
-		private long last_uid = 0;
-		private long last_ts = 0;
-		private String last_uuid = null;
+		private String lastUid = null;
+		private long lastTS = 0;
+		private String lastUUID = null;
 
 	  
-	  public String evaluate(long uid, long ts, int tolerance) {		  
-		  if (uid == last_uid && TimeStampCompare(last_ts, ts, tolerance)) { 
-			  last_ts = ts;
-			  
-			  return last_uuid;
-			  
-		  } else if (uid == last_uid) {
-			  last_ts = ts;
-			  last_uuid=UUID.randomUUID().toString();
-			  return last_uuid;
+	  public String evaluate(String uid, long ts, int tolerance) {
+		  if (uid.equals(lastUid) && timeStampCompare(lastTS, ts, tolerance)) { 
+			  lastTS = ts;			  
+		  } else if (uid.equals(lastUid)) {
+			  lastTS = ts;
+			  lastUUID=UUID.randomUUID().toString();
 			  
 		  } else {
-			  last_uid = uid;
-			  last_ts = ts;
-			  last_uuid=UUID.randomUUID().toString(); // is there a way to grab the last session of the table?
-			  return last_uuid;
+			  lastUid = uid;
+			  lastTS = ts;
+			  lastUUID=UUID.randomUUID().toString();
 		  }
+		  return lastUUID;
 	  }
-	  public String evaluate(long uid,  long ts) { 
-		 return evaluate(uid, ts, 1800000); // 30 minute = 1800000 seconds
+	  public String evaluate(String uid,  long ts) { 
+		 return evaluate(uid, ts, 1800000);
 	  }
 	  
-	  private Boolean TimeStampCompare(long last_ts, long ts, int ms) { 
+	  private Boolean timeStampCompare(long lastTS, long ts, int ms) { 
 		  try {
-			  //long difference = ts.subtract(last_ts); 
-			  //return (Math.abs(difference.intValueExact()) < ms) ? true : false; 
-			  long difference = ts - last_ts;
+			  long difference = ts - lastTS;
 			  return (Math.abs((int)difference) < ms) ? true : false;
 		  } catch (ArithmeticException e) {
 			  return false;
