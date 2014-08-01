@@ -17,13 +17,16 @@ package brickhouse.udf.hll;
  **/
 
 import org.apache.hadoop.hive.ql.exec.Description;
+import org.apache.hadoop.hive.ql.exec.UDFArgumentTypeException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.udf.generic.AbstractGenericUDAFResolver;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.log4j.Logger;
 
@@ -38,55 +41,56 @@ import org.apache.log4j.Logger;
 public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
   private static final Logger LOG = Logger.getLogger(UnionHyperLogLogUDAF.class);
 
-
   @Override
   public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
       throws SemanticException {
+    if (parameters.length != 1) {
+      throw new UDFArgumentTypeException(parameters.length - 1,
+          "Please specify one argument.");
+    }
+    
+    if (parameters[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
+      throw new UDFArgumentTypeException(0,
+          "Only primitive type arguments are accepted but "
+              + parameters[0].getTypeName()
+              + " was passed as parameter 1.");
+    }
+    
+    if (((PrimitiveTypeInfo) parameters[0]).getPrimitiveCategory() != PrimitiveObjectInspector.PrimitiveCategory.BINARY) {
+      throw new UDFArgumentTypeException(0,
+          "Only a binary argument is accepted as parameter 1, but "
+              + parameters[0].getTypeName()
+              + " was passed instead.");
+    }
+    
+    if (parameters.length > 1) throw new IllegalArgumentException("Function only takes 1 parameter.");
+
     return new MergeHyperLogLogUDAFEvaluator();
   }
 
-
   public static class MergeHyperLogLogUDAFEvaluator extends GenericUDAFEvaluator {
     // For PARTIAL1 and COMPLETE: ObjectInspectors for original data
-	  private BinaryObjectInspector inputBinaryOI;
-	  private BinaryObjectInspector partialBinaryOI;
-
-
-      
-
+ // For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (binary serialized hll object)
+	  private BinaryObjectInspector inputAndPartialBinaryOI;
 
     public ObjectInspector init(Mode m, ObjectInspector[] parameters)
         throws HiveException {
       super.init(m, parameters);
-      LOG.info(" MergeHyperLogLogUDAF.init() - Mode= " + m.name() );
-      for(int i=0; i<parameters.length; ++i) {
-        LOG.info(" ObjectInspector[ "+ i + " ] = " + parameters[0]);
-      }
-      /// 
-      if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
-    	  //// iterate() gets called.. binary is passed in
-    	  this.inputBinaryOI = (BinaryObjectInspector) parameters[0];
-    	  
-    	  
-      } else { /// Mode m == Mode.PARTIAL2 || m == Mode.FINAL
-    	   /// merge() gets called ... binary is passed in ..
-    	  this.partialBinaryOI = (BinaryObjectInspector) parameters[0];
-        		 
-      } 
-      /// The intermediate result is a map of hashes and strings,
-      /// The final result is an array of strings
-      if( m == Mode.FINAL || m == Mode.COMPLETE) {
-    	  /// for final result
-    	  return PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
-      } else { /// m == Mode.PARTIAL1 || m == Mode.PARTIAL2 
-    	  return PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
-      }
+      
+      LOG.debug(" MergeHyperLogLogUDAF.init() - Mode= " + m.name() );
+      
+      // init input object inspectors
+    	this.inputAndPartialBinaryOI = (BinaryObjectInspector) parameters[0];
+      
+    	// init output object inspectors
+      // The partial aggregate type is the same as the final type
+    	return PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
     }
 
     @Override
     public AggregationBuffer getNewAggregationBuffer() throws HiveException {
       HLLBuffer buff= new HLLBuffer();
-      buff.init( HyperLogLogUDAF.PRECISION);
+      reset(buff);
       return buff;
     }
 
@@ -94,17 +98,13 @@ public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
     public void iterate(AggregationBuffer agg, Object[] parameters)
     		throws HiveException {
     	try {
-    		Object blobObj = parameters[0];
-
-    		if (blobObj != null) {
-    			///ByteArrayRef bref = this.inputBinaryOI.getPrimitiveJavaObject(blobObj);
-    			byte[] bref = this.inputBinaryOI.getPrimitiveJavaObject(blobObj);
-    			HLLBuffer hllBuff = (HLLBuffer) agg;
-    			///hllBuff.merge( bref.getData());
-    			if(bref != null)
-    				hllBuff.merge( bref);
-
-    		}
+    	  
+    	  if (parameters[0] == null) {
+    	    return;
+    	  }
+    	  
+    		Object partial = parameters[0];
+    		merge(agg, partial);
     	} catch(Exception e) {
     		LOG.error("Error",e);
     		throw new HiveException(e);
@@ -114,17 +114,18 @@ public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
     @Override
     public void merge(AggregationBuffer agg, Object partial)
         throws HiveException {
+      if (partial == null) {
+        return;
+      }
+      
     	try {
-    	/// Partial is going to be binary
-        HLLBuffer myagg = (HLLBuffer) agg;
-        
-        byte[] bref = this.partialBinaryOI.getPrimitiveJavaObject(partial);
-        myagg.merge( bref);
+    	  HLLBuffer myagg = (HLLBuffer) agg;
+        byte[] partialBuffer = this.inputAndPartialBinaryOI.getPrimitiveJavaObject(partial);
+        myagg.merge(partialBuffer);
     	} catch(Exception e) {
     		LOG.error("Error",e);
     		throw new HiveException(e);
     	}
-        
     }
 
     @Override
@@ -149,6 +150,4 @@ public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
     	return terminate(agg);
     }
   }
-
-
 }
