@@ -4,8 +4,15 @@ CREATE TEMPORARY FUNCTION array_index AS 'brickhouse.udf.collect.ArrayIndexUDF';
 CREATE TEMPORARY FUNCTION first_index AS 'brickhouse.udf.collect.FirstIndexUDF';
 CREATE TEMPORARY FUNCTION last_index AS 'brickhouse.udf.collect.LastIndexUDF';
 CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayIntersectUDF';
+
+use ramblas;
+add jar auxJars/avro-serde-0.13.1-jdb.jar;
+add jar auxJars/brickhouse-0.7.0-SNAPSHOT.jar;
+CREATE TEMPORARY FUNCTION array_flatten AS 'brickhouse.udf.collect.ArrayFlattenUDF';
 CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
+
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
+CREATE TEMPORARY FUNCTION collect_merge_max AS 'brickhouse.udf.collect.CollectMergeMaxUDAF';
 CREATE TEMPORARY FUNCTION cast_array AS 'brickhouse.udf.collect.CastArrayUDF';
 CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastMapUDF';
 CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDF';
@@ -15,15 +22,22 @@ CREATE TEMPORARY FUNCTION join_array AS 'brickhouse.udf.collect.JoinArrayUDF';
 CREATE TEMPORARY FUNCTION map_filter_keys AS 'brickhouse.udf.collect.MapFilterKeysUDF';
 CREATE TEMPORARY FUNCTION map_index AS 'brickhouse.udf.collect.MapIndexUDF';
 CREATE TEMPORARY FUNCTION map_key_values AS 'brickhouse.udf.collect.MapKeyValuesUDF';
+CREATE TEMPORARY FUNCTION mhash3 AS 'brickhouse.udf.collect.MurmurHash3UDF.java';
+CREATE TEMPORARY FUNCTION mhash3array AS 'brickhouse.udf.collect.MurmurHash3ArrayUDF.java';
 CREATE TEMPORARY FUNCTION multiday_count AS 'brickhouse.udf.collect.MultiDayCounterUDAF';
 CREATE TEMPORARY FUNCTION numeric_range AS 'brickhouse.udf.collect.NumericRange';
 CREATE TEMPORARY FUNCTION set_difference AS 'brickhouse.udf.collect.SetDifferenceUDF';
 CREATE TEMPORARY FUNCTION truncate_array AS 'brickhouse.udf.collect.TruncateArrayUDF';
 CREATE TEMPORARY FUNCTION union_max AS 'brickhouse.udf.collect.UnionMaxUDAF';
 CREATE TEMPORARY FUNCTION union_map AS 'brickhouse.udf.collect.UnionUDAF';
+CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
+<<<<<<< HEAD
+CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
+=======
+>>>>>>> origin/master
 
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
-CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF';
+CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF'; 
 CREATE TEMPORARY FUNCTION to_json AS 'brickhouse.udf.json.ToJsonUDF';
 CREATE TEMPORARY FUNCTION from_json AS 'brickhouse.udf.json.FromJsonUDF';
 CREATE TEMPORARY FUNCTION to_camel_case AS 'brickhouse.udf.json.ConvertToCamelCaseUDF';

@@ -256,7 +256,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 				}
 			}
 			
-			for(int i=2; i< partialResult.size(); ++i) {
+			for(int i=1; i< partialResult.size(); ++i) {
 				
 			   List kvList = subListOI.getList( partialResult.get(i));
 			   String key = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(kvList.get(0));

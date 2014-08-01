@@ -44,6 +44,7 @@ See the wiki on Github at https://github.com/klout/brickhouse/wiki for more
 Also, see discussions on the Brickhouse Confessions blog on Wordpress 
  
  http://brickhouseconfessions.wordpress.com/
+ 
 
-
+[![DOI](https://zenodo.org/badge/4948/klout/brickhouse.png)](http://dx.doi.org/10.5281/zenodo.10751)
 
