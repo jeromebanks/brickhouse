@@ -47,13 +47,13 @@ public class CollectMaxUDAF extends AbstractGenericUDAFResolver {
 
   public static class MapCollectMaxUDAFEvaluator extends GenericUDAFEvaluator {
     // For PARTIAL1 and COMPLETE: ObjectInspectors for original data
-    private PrimitiveObjectInspector  inputKeyOI;
-    private PrimitiveObjectInspector inputValOI; 
+    protected PrimitiveObjectInspector  inputKeyOI;
+    protected PrimitiveObjectInspector inputValOI; 
     // For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (list
     // of objs)
-    private StandardMapObjectInspector internalMergeOI;
+    protected StandardMapObjectInspector internalMergeOI;
     private boolean descending = true;
-    private int numValues = DEFAULT_MAX_VALUES;
+    protected int numValues = DEFAULT_MAX_VALUES;
 
 
     public MapCollectMaxUDAFEvaluator() {
@@ -231,7 +231,7 @@ public class CollectMaxUDAF extends AbstractGenericUDAFResolver {
 
     }
 
-    private void putIntoSet(Object key, Object val, MapAggBuffer myagg) {
+    protected void putIntoSet(Object key, Object val, MapAggBuffer myagg) {
       myagg.addValue(key, val);
     }
 

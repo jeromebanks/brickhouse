@@ -81,7 +81,7 @@ public class FromJsonUDF extends GenericUDF {
 	@Override
 	public ObjectInspector initialize(ObjectInspector[] arg0)
 			throws UDFArgumentException {
-		if( arg0.length != 2) {
+		if( arg0.length != 2 && arg0.length != 3) {
 		    throw new UDFArgumentException("from_json expects a JSON string and a template object");
 		}
 		if(arg0[0].getCategory() != Category.PRIMITIVE

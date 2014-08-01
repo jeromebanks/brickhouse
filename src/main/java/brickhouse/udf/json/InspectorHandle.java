@@ -34,7 +34,10 @@ public interface InspectorHandle {
     ObjectInspector getReturnType();	
     
     final public class InspectorHandleFactory {
-    	static public InspectorHandle GenerateInspectorHandle( ObjectInspector insp ) throws UDFArgumentException {
+    	static public InspectorHandle GenerateInspectorHandle( ObjectInspector insp) throws UDFArgumentException {
+    		return GenerateInspectorHandle( insp, false);
+    	}
+    	static public InspectorHandle GenerateInspectorHandle( ObjectInspector insp, boolean convertFromCamelCase) throws UDFArgumentException {
     		Category cat = insp.getCategory();
     		switch( cat)  {
     		case LIST:
@@ -42,7 +45,7 @@ public interface InspectorHandle {
     		case MAP:
     			return new InspectorHandle.MapHandle( (MapObjectInspector)insp);
     		case STRUCT:
-    			return new InspectorHandle.StructHandle( (StructObjectInspector)insp);
+    			return new InspectorHandle.StructHandle( (StructObjectInspector)insp, convertFromCamelCase);
     		case PRIMITIVE:
     			return new InspectorHandle.PrimitiveHandle( (PrimitiveObjectInspector)insp);
     		}
@@ -65,11 +68,13 @@ public interface InspectorHandle {
     	 */
     	private List<String> fieldNames;
     	private List<InspectorHandle> handleList;
+    	private boolean convertFromCamelCase = false;
     	
     	
-    	public StructHandle( StructObjectInspector structInspector) throws UDFArgumentException {
+    	public StructHandle( StructObjectInspector structInspector, boolean convertFromCamelCase) throws UDFArgumentException {
     		fieldNames = new ArrayList<String>();
     		handleList = new ArrayList<InspectorHandle>();
+    		convertFromCamelCase = convertFromCamelCase;
     		
     		List<? extends StructField> refs =  structInspector.getAllStructFieldRefs();
     		for( StructField ref : refs) {
@@ -82,12 +87,15 @@ public interface InspectorHandle {
     	@Override
     	public Object parseJson(JsonNode jsonNode) {
     		/// For structs, they just return a list of object values
-    		if(jsonNode.isNull())
+    		if(jsonNode == null || jsonNode.isNull())
     			return null;
     		List<Object> valList = new ArrayList<Object>();
     		
     		for(int i=0; i< fieldNames.size(); ++i) {
     			String key = fieldNames.get( i);
+    			if( this.convertFromCamelCase) {
+    				key = FromJsonUDF.ToCamelCase(key);
+    			}
     			JsonNode valNode = jsonNode.get( key);
     			InspectorHandle valHandle = handleList.get(i);
     			
@@ -124,7 +132,7 @@ public interface InspectorHandle {
 		}
 		@Override
 		public Object parseJson(JsonNode jsonNode) {
-			if(jsonNode.isNull()) 
+			if(jsonNode == null || jsonNode.isNull()) 
 				return null;
 			Map<String,Object> newMap = (Map<String,Object>)retInspector.create();
 			
@@ -158,7 +166,7 @@ public interface InspectorHandle {
 		
 		@Override
 		public Object parseJson(JsonNode jsonNode) {
-			if(jsonNode.isNull() )
+			if(jsonNode == null || jsonNode.isNull() )
 				return null;
 			List newList = (List) retInspector.create(0);
 			
