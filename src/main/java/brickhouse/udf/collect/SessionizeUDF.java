@@ -17,14 +17,36 @@ package brickhouse.udf.collect;
  *
  */
 
-/**
- * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
- */
 import java.util.UUID;
 
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 
+/**
+ * 
+ * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
+ *   
+ *   The input to this function is assumed to be sorted by a user_key , and by time, and is useful for creating sessions from
+ *     user activity data. (i.e. web logs ).  The timestamp is assumed to be bigint, representing the number of milliseconds from
+ *     the beginning of the epoch.
+ *     
+ *    The input needs to be sorted and partitioned using Hive 'SORT' and 'DISTRIBUTE' clauses.  Example usage would be :
+ *      
+ *    SELECT user_key, 
+ *          session_id,
+ *          min( tstamp) as session_start,
+ *          max( tstamp ) as session_end
+ *    FROM 
+ *      ( SELECT user_key,
+ *               sessionize( user_key, tstamp )
+ *          FROM weblogs
+ *       DISTRIBUTE BY user_key
+ *       SORT BY user_key, tsamp 
+ *     ) sz
+ *   GROUP BY
+ *     user_key, session_id;
+ * 
+ */
 @Description(
 		name="sessionize", 
 		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
@@ -42,7 +64,6 @@ public class SessionizeUDF extends UDF {
 		  } else if (uid.equals(lastUid)) {
 			  lastTS = ts;
 			  lastUUID=UUID.randomUUID().toString();
-			  
 		  } else {
 			  lastUid = uid;
 			  lastTS = ts;
@@ -50,6 +71,7 @@ public class SessionizeUDF extends UDF {
 		  }
 		  return lastUUID;
 	  }
+
 	  public String evaluate(String uid,  long ts) { 
 		 return evaluate(uid, ts, 1800000);
 	  }
