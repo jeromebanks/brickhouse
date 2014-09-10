@@ -2,6 +2,7 @@ package brickhouse.hbase;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
@@ -97,34 +98,35 @@ public class CachedGetUDF extends GenericUDF {
 		
 	};
 	
-	private int numLoaded =0;
+	private int numLoaded = 0;
+    private int numCalls = 0;
 	private int numMisses = 0;
-	private int numHits = 0;
 	private int numErrors = 0;
 	
-	public Object getValue(String key) {
-		
+	public Object getValue(final String key) {
 		try {
-			Object l = cache.get(key);
-			if( (++numHits % 1000) == 0 ) {
-				LOG.info( "Retrieved " + numHits + " features  key = " + key + " Num misses =" + numMisses);
+            ++numCalls;
+			Object l = cache.get(key, new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    ++numMisses;
+                    return valueLoader.load(key);
+                }
+            });
+			if( ((numCalls - numMisses) % 1000) == 0 ) {
+				LOG.info( "Retrieved " + (numCalls - numMisses) + " features  key = " + key + " Num misses =" + numMisses);
 			}
 			return l;
 		} catch (UncheckedExecutionException e) {
 			LOG.error("Error while parsing string " , e);
 			if( (++numErrors % 1000) == 0 ) {
-				LOG.info( "Num Errors = " + numErrors + ";  Missed " + numMisses + " features key = " + key + " Num hits = " + numHits);
-			}
-			return null;
-		} catch (NoSuchElementException notThere) {
-			if( (++numMisses % 1000) == 0 ) {
-				LOG.info( "Missed " + numMisses + " features key = " + key + " Num hits = " + numHits);
+				LOG.info( "Num Errors = " + numErrors + ";  Missed " + numMisses + " features key = " + key + " Num hits = " + (numCalls - numMisses));
 			}
 			return null;
 		} catch (Exception unexpected) {
 			LOG.error("Error while parsing string " , unexpected);
 			if( (++numErrors % 1000) == 0 ) {
-				LOG.info( "Num Errors = " + numErrors + "; Missed " + numMisses + " features key = " + key + " Num hits = " + numHits);
+				LOG.info( "Num Errors = " + numErrors + "; Missed " + numMisses + " features key = " + key + " Num hits = " + (numCalls - numMisses));
 			}
 			return null;
 		}
