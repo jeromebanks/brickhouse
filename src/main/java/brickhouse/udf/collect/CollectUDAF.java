@@ -24,6 +24,7 @@ package brickhouse.udf.collect;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentTypeException;
@@ -31,6 +32,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.udf.generic.AbstractGenericUDAFResolver;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
+import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
@@ -67,8 +69,8 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 		private ObjectInspector inputOI;
 		// For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (list
 		// of objs)
-		private StandardListObjectInspector loi;
-		private StandardListObjectInspector internalMergeOI;
+		private ListObjectInspector internalMergeOI;
+		private StandardListObjectInspector retListOI;
 
 
 		static class ArrayAggBuffer implements AggregationBuffer {
@@ -80,24 +82,26 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 			super.init(m, parameters);
 			// init output object inspectors
 			// The output of a partial aggregation is a list
-			if (m == Mode.PARTIAL1) {
+		   	
+			/// the end output is a list
+			
+			
+			if (m == Mode.PARTIAL1 || m == Mode.COMPLETE ) {
 				inputOI = parameters[0];
-				return ObjectInspectorFactory
-						.getStandardListObjectInspector( ObjectInspectorUtils
-								.getStandardObjectInspector(inputOI));
+				internalMergeOI = null;
+				retListOI =  ObjectInspectorFactory
+						.getStandardListObjectInspector( 
+								ObjectInspectorUtils.getStandardObjectInspector(inputOI ));
+				return retListOI;
 			} else {
-				if (!(parameters[0] instanceof StandardListObjectInspector)) {
-					//no map aggregation.
-					inputOI = ObjectInspectorUtils
-							.getStandardObjectInspector(parameters[0]);
-					return (StandardListObjectInspector) ObjectInspectorFactory
-							.getStandardListObjectInspector(inputOI);
-				} else {
-					internalMergeOI = (StandardListObjectInspector) parameters[0];
-					inputOI = internalMergeOI.getListElementObjectInspector();
-					loi = (StandardListObjectInspector) ObjectInspectorUtils.getStandardObjectInspector(internalMergeOI);
-					return loi;
-				}
+				///if ( m == Mode.PARTIAL2 || m == Mode.FINAL) {
+					inputOI = null;  /// Don't use this for this case
+					internalMergeOI = (ListObjectInspector)parameters[0];
+					retListOI = ObjectInspectorFactory
+							.getStandardListObjectInspector( 
+									ObjectInspectorUtils.getStandardObjectInspector(internalMergeOI.getListElementObjectInspector()));
+					return retListOI;
+				///}
 			}
 		}
 
@@ -115,7 +119,7 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 
 			if (p != null) {
 				ArrayAggBuffer myagg = (ArrayAggBuffer) agg;
-				putIntoSet(p, myagg);
+				putIntoSet(p, myagg, this.inputOI);
 			}
 		}
 
@@ -123,9 +127,10 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 		public void merge(AggregationBuffer agg, Object partial)
 				throws HiveException {
 			ArrayAggBuffer myagg = (ArrayAggBuffer) agg;
-			ArrayList<Object> partialResult = (ArrayList<Object>) internalMergeOI.getList(partial);
-			for(Object i : partialResult) {
-				putIntoSet(i, myagg);
+			int listSize = internalMergeOI.getListLength(partial);
+			for(int i=0; i<listSize; ++i) {
+				Object uninsp = internalMergeOI.getListElement(partial, i);
+				putIntoSet(uninsp, myagg, internalMergeOI.getListElementObjectInspector());
 			}
 		}
 
@@ -138,24 +143,23 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 		@Override
 		public Object terminate(AggregationBuffer agg) throws HiveException {
 			ArrayAggBuffer myagg = (ArrayAggBuffer) agg;
-			ArrayList<Object> ret = new ArrayList<Object>(myagg.collectArray.size());
-			ret.addAll(myagg.collectArray);
-			return ret;
-
+			int listSize = myagg.collectArray.size();
+			Object newList = retListOI.create( listSize);
+			for(int i=0; i<listSize; ++i) {
+               Object colVal = myagg.collectArray.get(i);
+			   retListOI.set( newList,i,colVal);
+			}
+			return newList;
 		}
 
-		private void putIntoSet(Object p, ArrayAggBuffer myagg) {
-			Object pCopy = ObjectInspectorUtils.copyToStandardObject(p,
-					this.inputOI);
-			myagg.collectArray.add( pCopy);
+		private void putIntoSet(Object p, ArrayAggBuffer myagg, ObjectInspector oi) {
+			Object standardP = ObjectInspectorUtils.copyToStandardObject(p, oi );
+			myagg.collectArray.add( standardP);
 		}
 
 		@Override
 		public Object terminatePartial(AggregationBuffer agg) throws HiveException {
-			ArrayAggBuffer myagg = (ArrayAggBuffer) agg;
-			ArrayList<Object> ret = new ArrayList<Object>(myagg.collectArray.size());
-			ret.addAll(myagg.collectArray);
-			return ret;
+			return terminate(agg);
 		}
 	}
 
@@ -178,7 +182,7 @@ public class CollectUDAF extends AbstractGenericUDAFResolver {
 			super.init(m, parameters);
 			// init output object inspectors
 			// The output of a partial aggregation is a list
-			if (m == Mode.PARTIAL1) {
+			if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
 				inputKeyOI = (PrimitiveObjectInspector) parameters[0];
 				inputValOI = parameters[1];
 				

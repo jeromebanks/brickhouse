@@ -70,7 +70,6 @@ value = "_FUNC_(x) - Returns a count of events over several different periods,"
 )
 public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 	private static final Logger LOG = Logger.getLogger(MultiDaySketcherUDAF.class);
-	private static final String SKETCH_FLAG_PROP = "klout.warehouse.multiday_sketch";
 
 
 	public MultiDaySketcherUDAF() {
