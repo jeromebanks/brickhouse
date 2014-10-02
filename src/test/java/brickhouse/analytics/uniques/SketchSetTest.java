@@ -300,7 +300,7 @@ public class SketchSetTest {
 		String line;
 		while( (line = reader.readLine() ) != null) {
 			ss.addItem( line);
-			ss2.addHashItem(  md5.hashUnencodedChars( line).asLong(), line );
+			ss2.addHashItem(  md5.hashString( line).asLong(), line );
 			cnt++;
 		}
 		
