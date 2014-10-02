@@ -36,34 +36,38 @@ public class SketchSet implements ICountDistinct {
 	
     public  static int DEFAULT_MAX_ITEMS = 5000;
     private  int maxItems = DEFAULT_MAX_ITEMS;
-	private TreeMap<Long,String> sortedMap;
+	private TreeMap<byte[],String> sortedMap;
 	private static HashFunction HASH = Hashing.md5();
 	
     
     public SketchSet() {
-    	sortedMap = new TreeMap<Long,String>();
+    	sortedMap = new TreeMap<byte[],String>();
     }
     	
     
     public SketchSet(int max ) {
     	this.maxItems = max;
-    	sortedMap = new TreeMap<Long,String>();
+    	sortedMap = new TreeMap<byte[],String>();
     }
     
     public void addHashItem( long hash, String str) {
+
+    }
+
+    public void addHashItem( byte[] hash, String str) {
     	if(sortedMap.size() < maxItems) {
     		sortedMap.put( hash, str);
     	} else {
-    		Long hashLong = hash;
-    		if(! sortedMap.containsKey( hashLong)) {
-    			long maxHash = sortedMap.lastKey();
-    			if( hash< maxHash) {
+    		if(! sortedMap.containsKey( hash)) {
+    			byte[] maxHash = sortedMap.lastKey();
+    			if( LessThan(hash, maxHash)) {
     				sortedMap.remove(maxHash);
-    				sortedMap.put( hashLong,str);
+    				sortedMap.put( maxHash,str);
     			}
     		}
     	}
     }
+
 	/**
 	 *   for testing 
 	 * @param hash
@@ -72,8 +76,23 @@ public class SketchSet implements ICountDistinct {
 		addHashItem( hash, Long.toString( hash));
 	}
 	
+	/**
+	 * Return true if the byte array represented by b1 is < b2
+	 * 
+	 */
+	static public boolean LessThan( byte[] b1, byte[] b2) {
+		/// XXX Do fast arithmetic 
+		/// on bytes
+       BigInteger bi1 = new BigInteger( b1);
+       BigInteger bi2 = new BigInteger( b2);
+       
+       return bi1.compareTo( bi2) < 0;
+		
+	}
+	
 	public void addItem( String str) {
-		HashCode hc = HASH.hashUnencodedChars( str);
+		///HashCode hc = HASH.hashUnencodedChars( str);
+		HashCode hc = HASH.hashString( str);
 		this.addHashItem( hc.asLong(), str);
 	}
 	
@@ -114,11 +133,17 @@ public class SketchSet implements ICountDistinct {
 	}
 	
 	static public double EstimatedReach( String lastItem, int maxItems) {
-		long maxHash = HASH.hashUnencodedChars(lastItem).asLong();
+		///long maxHash = HASH.hashUnencodedChars(lastItem).asLong();
+		////long maxHash = HASH.hashString(lastItem).asLong();
+		HashCode maxHash = HASH.hashString(lastItem);
 		return EstimatedReach( maxHash, maxItems);
 	}
 	
 	static public double EstimatedReach( long maxHash, int maxItems) {
+
+	}
+
+	static public double EstimatedReach( HashCode maxHash, int maxItems) {
 		BigDecimal maxHashShifted = new BigDecimal(BigInteger.valueOf( maxHash).add( BigInteger.valueOf( Long.MAX_VALUE)));
 		
 		BigDecimal bigMaxItems = new BigDecimal( maxItems*2).multiply( BigDecimal.valueOf( Long.MAX_VALUE));

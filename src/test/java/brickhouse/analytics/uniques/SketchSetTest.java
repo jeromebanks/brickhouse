@@ -182,6 +182,54 @@ public class SketchSetTest {
 		Assert.assertTrue( diffRatio <= tolerance);
 	}
 	
+	
+	@Test
+	public void testAvgVariance() {
+		int sketchSize = 15000;
+		double totalDiff = 0.0;
+		int numRuns = 500;
+		ArrayList<Double> samples = new ArrayList<Double>();
+
+		double volSumSquares = 0.0;
+		for(int i=0; i<numRuns; ++i) {
+		
+		   SketchSet ss = new SketchSet(sketchSize);
+		   int numHashes = (int) ((double)(1024*512)*Math.random()) + 10000;
+		   System.out.println(" Number of hashes one = " + numHashes);
+		   for(int j=0; j<numHashes; ++j) {
+			   UUID randomUUID = UUID.randomUUID();
+			   ///System.out.println(" RandomUUID " + randomUUID.toString());
+			   ss.addItem( randomUUID.toString());
+		   }
+		
+		   double card = ss.estimateReach();
+		   System.out.println(" Estimated Card 1 = " + card);
+		   int diff = (int) Math.abs( card - numHashes);
+		    double diffRatio = ((double)diff)/numHashes;
+		    System.out.println(" Diff Ration = "+ diffRatio);
+		    samples.add( diffRatio);
+		    totalDiff += diffRatio;
+		    
+		    volSumSquares += diffRatio*diffRatio; 
+
+		}
+		
+		double avgDiff = totalDiff/numRuns;
+		System.out.println( "Avg difference for " + numRuns + " samples for Sketch size of " + sketchSize + " == " + avgDiff);
+		
+		double sumSquares = 0.0;
+		for( Double sample : samples) {
+			double diff = sample - avgDiff;
+			sumSquares += diff*diff;
+		}
+		double stdDev = Math.sqrt( sumSquares/numRuns);
+		
+		System.out.println("Sum of squares is " + sumSquares + " Standard deviation is "+ stdDev);
+		
+		double vol = Math.sqrt( volSumSquares/numRuns);
+		System.out.println(" Volatility sum of squares is " + volSumSquares + " Volatility is " + vol);
+	}
+		
 	@Test
 	public void testDistinctSets() {
 		
