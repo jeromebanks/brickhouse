@@ -106,13 +106,15 @@ public interface InspectorHandle {
     		}
     		return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, structFieldObjectInspectors);
     	}
-    	
+
     }
-    
+
 	
 	class MapHandle implements InspectorHandle {
 		private InspectorHandle mapValHandle;
 		private StandardMapObjectInspector retInspector;
+
+		public MapHandle() {} // For Kryo Deserialization
 
 		/// for JSON maps (or "objects"), the keys are always string objects
 		///  
