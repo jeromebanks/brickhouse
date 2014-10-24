@@ -1,6 +1,7 @@
 
 CREATE TEMPORARY FUNCTION append_array AS 'brickhouse.udf.collect.AppendArrayUDF';
 CREATE TEMPORARY FUNCTION array_index AS 'brickhouse.udf.collect.ArrayIndexUDF';
+CREATE TEMPORARY FUNCTION array_union AS 'brickhouse.udf.collect.ArrayUnionUDF';
 CREATE TEMPORARY FUNCTION first_index AS 'brickhouse.udf.collect.FirstIndexUDF';
 CREATE TEMPORARY FUNCTION last_index AS 'brickhouse.udf.collect.LastIndexUDF';
 CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayIntersectUDF';
