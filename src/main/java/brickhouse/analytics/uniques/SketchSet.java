@@ -19,7 +19,6 @@ package brickhouse.analytics.uniques;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,33 +35,50 @@ public class SketchSet implements ICountDistinct {
 	
     public  static int DEFAULT_MAX_ITEMS = 5000;
     private  int maxItems = DEFAULT_MAX_ITEMS;
-	private TreeMap<byte[],String> sortedMap;
+	private TreeMap<BigInteger,String> sortedMap;
 	private static HashFunction HASH = Hashing.md5();
+	///private static HashFunction HASH = Hashing.md5();
+	///private static HashFunction HASH = Hashing.sha1();
+
+	private int hashLength = 16;
 	
     
     public SketchSet() {
-    	sortedMap = new TreeMap<byte[],String>();
+    	sortedMap = new TreeMap<BigInteger,String>();
     }
     	
     
     public SketchSet(int max ) {
     	this.maxItems = max;
-    	sortedMap = new TreeMap<byte[],String>();
+    	sortedMap = new TreeMap<BigInteger,String>();
     }
     
-    public void addHashItem( long hash, String str) {
+    public SketchSet(int max , int hashLength) {
+    	this.maxItems = max;
+    	sortedMap = new TreeMap<BigInteger,String>();
+    	this.hashLength = hashLength;
+    }
 
+    public void addHashItem( long hash, String str) {
+       addHashItem( LongToByteArr(hash), str);
     }
 
     public void addHashItem( byte[] hash, String str) {
+       addHashItem( new BigInteger(hash), str);
+    }
+
+    public void addHashItem( BigInteger hash, String str) {
+    	///System.out.println(" HASH IS " + hash.toString() );
     	if(sortedMap.size() < maxItems) {
-    		sortedMap.put( hash, str);
+    		sortedMap.put( (hash), str);
     	} else {
     		if(! sortedMap.containsKey( hash)) {
-    			byte[] maxHash = sortedMap.lastKey();
-    			if( LessThan(hash, maxHash)) {
+    			BigInteger maxHash = sortedMap.lastKey();
+    			///System.out.println(" NEW HASH is " + hash + " OLD HASH IS " + maxHash );
+    			if( maxHash.compareTo(hash) > 0 ) {
+    			///System.out.println(" REPLACING NEW HASH is " + hash + " OLD HASH IS " + maxHash );
     				sortedMap.remove(maxHash);
-    				sortedMap.put( maxHash,str);
+    				sortedMap.put( hash,str);
     			}
     		}
     	}
@@ -72,39 +88,35 @@ public class SketchSet implements ICountDistinct {
 	 *   for testing 
 	 * @param hash
 	 */
-	public void addHash( long hash) {
-		addHashItem( hash, Long.toString( hash));
+	public void addHash( byte[] hash) {
+		addHash( new BigInteger(hash));
+	}
+	public void addHash(BigInteger hash) {
+		addHashItem( hash, hash.toString());
 	}
 	
-	/**
-	 * Return true if the byte array represented by b1 is < b2
-	 * 
-	 */
-	static public boolean LessThan( byte[] b1, byte[] b2) {
-		/// XXX Do fast arithmetic 
-		/// on bytes
-       BigInteger bi1 = new BigInteger( b1);
-       BigInteger bi2 = new BigInteger( b2);
-       
-       return bi1.compareTo( bi2) < 0;
-		
+	public void addHash( long hashLong) {
+		byte[] hash = LongToByteArr( hashLong);
+		addHash( hash);
 	}
-	
+
 	public void addItem( String str) {
 		///HashCode hc = HASH.hashUnencodedChars( str);
 		HashCode hc = HASH.hashString( str);
-		this.addHashItem( hc.asLong(), str);
+		///this.addHashItem( hc.asLong(), str);
+		///System.out.println(" HASH OF " + str + " is " + hc.asLong()  + " BIG INT + = " + ( new BigInteger(hc.asBytes())));
+		this.addHashItem( hc.asBytes(), str);
 	}
 	
 	public List<String> getMinHashItems() {
 	  return new ArrayList(this.sortedMap.values());
 	}
 	
-	public SortedMap<Long,String> getHashItemMap() {
+	public SortedMap<BigInteger,String> getHashItemMap() {
 		return this.sortedMap;
 	}
 	
-	public List<Long> getMinHashes() {
+	public List<BigInteger> getMinHashes() {
 	   return new ArrayList( this.sortedMap.keySet());
 	}
 	
@@ -116,7 +128,7 @@ public class SketchSet implements ICountDistinct {
 		return maxItems;
 	}
 	
-	public long lastHash() {
+	public BigInteger lastHash() {
 		return sortedMap.lastKey();
 	}
 	
@@ -128,8 +140,30 @@ public class SketchSet implements ICountDistinct {
 		if(sortedMap.size() < maxItems) {
 			return sortedMap.size();
 		}
-		long maxHash = sortedMap.lastKey();
-		return EstimatedReach(maxHash, maxItems);
+		BigInteger maxHash = sortedMap.lastKey();
+		return EstimatedReach(maxHash, maxItems, hashLength);
+	}
+	
+	
+	/** 
+	 *  Converts a Byte array to a Long
+	 *   Cuts off bytes beyond 8 
+	 * @param byteArr
+	 * @return
+	 */
+	static public long ByteArrToLong( byte[] byteArr) {
+		long val = 0l;
+		for(int i=0; i<8; ++i) {
+		  val = val | (byteArr[i] << i*8);
+		}
+		return val;
+	}
+	static public byte[] LongToByteArr( long lng) {
+		byte[] byteVal = new byte[8];
+		for(int i=0; i<8; ++i) {
+			byteVal[i] = (byte)((lng & ( 0xFF << i*8)) >> i*8);
+		}
+		return byteVal;
 	}
 	
 	static public double EstimatedReach( String lastItem, int maxItems) {
@@ -140,26 +174,75 @@ public class SketchSet implements ICountDistinct {
 	}
 	
 	static public double EstimatedReach( long maxHash, int maxItems) {
+       return EstimatedReach( BigInteger.valueOf(maxHash), maxItems, 8 );
+	}
+
+	static public double EstimatedReach( byte[] maxHash, int maxItems) {
+       return EstimatedReach( new BigInteger(maxHash), maxItems, maxHash.length );
+	}
+
+
+	static public double EstimatedReach( HashCode maxHash, int maxItems) {
+		return EstimatedReach( maxHash.asBytes(), maxItems);
 
 	}
 
-	static public double EstimatedReach( HashCode maxHash, int maxItems) {
-		BigDecimal maxHashShifted = new BigDecimal(BigInteger.valueOf( maxHash).add( BigInteger.valueOf( Long.MAX_VALUE)));
+	/*    
+	 *   |-----------------|------------------|
+	 *          
+	 * 
+	 */
+	static public double EstimatedReach( BigInteger maxHash, int maxItems, int byteLength) {
+		BigInteger maxValue = MaxValueForByteLength( byteLength);
 		
-		BigDecimal bigMaxItems = new BigDecimal( maxItems*2).multiply( BigDecimal.valueOf( Long.MAX_VALUE));
-		BigDecimal ratio = bigMaxItems.divide(maxHashShifted, RoundingMode.HALF_EVEN);
+		BigDecimal maxHashShifted = new BigDecimal(maxHash.add( maxValue));
+		///System.out.println(" MAX HASH  " + maxHash);
+		///System.out.println(" MAX HASH SHIFTEd + " + maxHashShifted);
+		BigInteger bigMaxItems = BigInteger.valueOf( maxItems*2).multiply( maxValue);
+		BigDecimal ratio = new BigDecimal( bigMaxItems).divide(maxHashShifted,BigDecimal.ROUND_HALF_DOWN);
+		///System.out.println(" RATIO = " + ratio);
 		return ratio.doubleValue();
 	}
 	
+	/**
+	 *   Returns the maximum value for integers with a  given signed bytelength
+	 *   
+	 *   i.e For byteLength = 8, returns Long.MAX_VALUE
+	 *   
+	 * @param byteLength
+	 * @return
+	 */
+	static public BigInteger MaxValueForByteLength( int byteLength ) {
+		BigInteger allOnes = new BigInteger( new byte[] { Byte.MAX_VALUE } );
+		BigInteger maxVal = allOnes;
+		for(int i=0; i<byteLength -1; ++i ) {
+			///System.out.println(" I = " + i + " maxVal = "+ maxVal);
+			BigInteger shiftVal = maxVal.shiftLeft(8);
+			maxVal = shiftVal.or( allOnes ).or( BigInteger.valueOf(128));
+		}
+	    ///System.out.println( "final maxVal = "+ maxVal);
+		return maxVal;
+	}
 	
+	static public BigInteger MinValueForByteLength( int byteLength ) {
+		return MaxValueForByteLength(byteLength).negate();
+	}
+	
+	/**
+	 *  XXX SimHash probably broken with shift to 
+	 *    bigger hashes 
+	 *    TODO fixit
+	 * @return
+	 */
 	public long calculateSimHash() {
 		int[] sumTable = new int[ SIZEOF_LONG];
 		
-		Iterator<Long> hashes = getHashItemMap().keySet().iterator();
+		Iterator<BigInteger> hashes = getHashItemMap().keySet().iterator();
 		while( hashes.hasNext() ) {
-			long hash = hashes.next();
-			long mask = 1l;
-			for(int pos =0; pos < SIZEOF_LONG; ++pos ) {
+			long hash =  hashes.next().longValue();
+
+			byte mask = 1;
+			for(int pos =0; pos < 8; ++pos ) {
 				if( (hash & mask) != 0l) {
 					sumTable[pos]++;
 				} else {
@@ -182,7 +265,7 @@ public class SketchSet implements ICountDistinct {
 	
 	
 	public void combine( SketchSet other) {
-		for( Entry<Long,String> entry: other.sortedMap.entrySet() ) {
+		for( Entry<BigInteger,String> entry: other.sortedMap.entrySet() ) {
 			addHashItem( entry.getKey(), entry.getValue());
 		}
 	}

@@ -69,7 +69,7 @@ public class CombineSketchUDF extends GenericUDF {
 		       case LONG: 
 		    	   LongObjectInspector bigintInspector = (LongObjectInspector) listInspectors[i].getListElementObjectInspector();
 		    	   long itemHash = bigintInspector.get(uninspObj);
-		    	   ss.addHash( itemHash);
+		    	   ss.addHash( SketchSet.LongToByteArr(itemHash));
 		    	   break;
 		       }
 			}

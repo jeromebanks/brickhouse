@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -43,6 +44,30 @@ public class SketchSetTest {
 		
 		double card = ss.estimateReach();
 		Assert.assertEquals( 4.0, card, 0.0);
+	}
+
+	@Test
+	public void testSketchSetOver5000() {
+		SketchSet ss = new SketchSet();
+		int numHashes = (int) ( 5000 + Math.random()*1024*4);
+		long minHash = Long.MAX_VALUE;
+		for( int i=0; i<numHashes; ++i ) {
+			double randHash = (Math.random()*((double)Long.MAX_VALUE)*2 ) - (double)Long.MAX_VALUE;
+			if( randHash < minHash)
+				minHash = (long)randHash;
+			ss.addItem( "" + randHash);
+		}
+		double ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.9 && ratio < 1.1);
+		
+		
+		ss.addHash( minHash -1 );
+		numHashes++;
+		ratio = ss.estimateReach()/(double)numHashes;
+		System.out.println(" Estimate reach = " + ss.estimateReach() + " size = "  + numHashes  + " ratio = " + ratio);
+		Assert.assertTrue( ratio > 0.9 && ratio < 1.1);
+		
 	}
 	
 	@Test
@@ -84,7 +109,7 @@ public class SketchSetTest {
 		Assert.assertTrue( ratio > 0.95 && ratio < 1.05);
 		
 		
-		long lastHash = ss.lastHash();
+		long lastHash =  ss.lastHash().longValue();
 		ss.addHash( lastHash - 1);
 		numHashes++;
 		ratio = ss.estimateReach()/(double)numHashes;
@@ -93,6 +118,36 @@ public class SketchSetTest {
 		
 	}
 
+	@Test
+	public void testMaxValue() {
+		BigInteger maxByte= SketchSet.MaxValueForByteLength(1);
+		System.out.println( " Max Byte Value is "+ maxByte);
+		
+		int diffByte = Byte.MAX_VALUE - maxByte.byteValue();
+		System.out.println(" DIFF IS " + diffByte);
+	
+		BigInteger maxShort= SketchSet.MaxValueForByteLength(2);
+		System.out.println( " Max Shorte Value is "+ maxShort);
+		
+		int diffShort = Short.MAX_VALUE - maxShort.shortValue();
+		System.out.println(Short.MAX_VALUE + " DIFF IS " + diffShort);
+
+		BigInteger maxLong = SketchSet.MaxValueForByteLength(8);
+		System.out.println( " Max Long Value is "+ maxLong);
+		
+		long diff = Long.MAX_VALUE - maxLong.longValue();
+		System.out.println( " Difference is " + diff);
+		
+		Assert.assertEquals( maxLong.longValue(), Long.MAX_VALUE);
+	}
+
+	@Test
+	public void testMinValue() {
+		BigInteger minLong = SketchSet.MinValueForByteLength(8);
+		System.out.println( " Min Long Value is "+ minLong);
+		
+		Assert.assertEquals( minLong.longValue(), Long.MIN_VALUE);
+	}
 
 
 	@Test
@@ -185,9 +240,9 @@ public class SketchSetTest {
 	
 	@Test
 	public void testAvgVariance() {
-		int sketchSize = 15000;
+		int sketchSize = 5000;
 		double totalDiff = 0.0;
-		int numRuns = 500;
+		int numRuns = 750;
 		ArrayList<Double> samples = new ArrayList<Double>();
 
 		double volSumSquares = 0.0;
@@ -348,7 +403,7 @@ public class SketchSetTest {
 		String line;
 		while( (line = reader.readLine() ) != null) {
 			ss.addItem( line);
-			ss2.addHashItem(  md5.hashUnencodedChars( line).asLong(), line );
+			ss2.addHashItem(  md5.hashString( line).asBytes(), line );
 			cnt++;
 		}
 		
@@ -366,7 +421,7 @@ public class SketchSetTest {
 		
 		Assert.assertTrue( pctDiff < 0.03);
 		
-		SortedMap<Long,String> hashItemMap = ss.getHashItemMap();
+		SortedMap<BigInteger,String> hashItemMap = ss.getHashItemMap();
 		System.out.println( " First Key is " +  hashItemMap.firstKey() );
 		System.out.println( " Last Key is " +  hashItemMap.lastKey() );
 	}
@@ -383,13 +438,14 @@ public class SketchSetTest {
 			ss.addItem( randomUUID.toString());
 		}
 		
-		List<Long> md5Hashes = ss.getMinHashes();
-		long last = Long.MIN_VALUE;
-		for( long md5 : md5Hashes) {
-			Assert.assertTrue( md5 > last);
+		List<BigInteger> md5Hashes = ss.getMinHashes();
+		BigInteger last =  SketchSet.MinValueForByteLength(16);
+		for( BigInteger md5 : md5Hashes) {
+			Assert.assertTrue( last.compareTo( md5) < 0);
+
 			last = md5;
 		}
-		double estReach = SketchSet.EstimatedReach( last, ss.getMaxItems());
+		double estReach = SketchSet.EstimatedReach( last, ss.getMaxItems(), 16);
 		double ratio = estReach/(double)numHashes;
 		System.out.println( " Estimated Reach = " + estReach + " num Hashes  = " + numHashes + " ; Ratio = " + ratio);
 		Assert.assertTrue( ratio < 1.05 && ratio > 0.95);

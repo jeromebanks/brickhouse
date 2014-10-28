@@ -36,7 +36,7 @@ public class GenerateBalancedKeyUDF extends UDF {
 		}
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append( Integer.toHexString(sumChars % numRegions).toUpperCase());
+		sb.append( String.format("%02X", sumChars % numRegions));
 		sb.append(':');
 		sb.append(keyStr);
 		

@@ -1,5 +1,6 @@
 package brickhouse.udf.sketch;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -35,9 +36,9 @@ class SketchSetBuffer implements AggregationBuffer {
        return sketchSet.getMinHashItems();
 	}
 	
-    public Map<Long,String> getPartialMap() {
-	    Map<Long,String> partial =  sketchSet.getHashItemMap();
-	    partial.put( (long)sketchSet.getMaxItems(), SketchSetUDAF.SKETCH_SIZE_STR);
+    public Map<BigInteger,String> getPartialMap() {
+	    Map<BigInteger,String> partial =  sketchSet.getHashItemMap();
+	    partial.put( BigInteger.valueOf(sketchSet.getMaxItems()), SketchSetUDAF.SKETCH_SIZE_STR);
 	    return partial;
     }
     
@@ -45,6 +46,10 @@ class SketchSetBuffer implements AggregationBuffer {
        sketchSet.addItem( str) ;
     }
     public void addHash( Long hash, String str) {
+    	sketchSet.addHashItem( SketchSet.LongToByteArr(hash), str );
+    }
+    
+    public void addHash( byte[] hash, String str) {
     	sketchSet.addHashItem( hash, str );
     }
 }
