@@ -31,7 +31,6 @@ import org.joda.time.format.DateTimeFormatter;
  *
  */
 public class AddDaysUDF extends UDF {
-	private static final Logger LOG = Logger.getLogger( AddDaysUDF.class);
 	private static final DateTimeFormatter YYYYMMDD = org.joda.time.format.DateTimeFormat.forPattern("YYYYMMdd");
 
 	public String evaluate(String dateStr, int numDays) {
