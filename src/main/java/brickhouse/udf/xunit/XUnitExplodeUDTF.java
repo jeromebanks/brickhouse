@@ -141,6 +141,8 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	     return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames,
 		      fieldOIs);
 	}
+	
+	private int totalXUnits = 0;
 
 	@Override
 	public void process(Object[] args) throws HiveException {
@@ -156,6 +158,8 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 				List<Object> otherStructs = dimValuesList.subList( 1, dimValuesList.size() );
 				List<String> allCombos = combinations( firstStruct, otherStructs);
 
+				totalXUnits += allCombos.size();
+				LOG.info(" SIZE OF ALL XUNIT COMBINATIONS IS " + allCombos.size() + " TOTAL XUNITS SO FAR IS " + totalXUnits);
 				for( String xunit : allCombos ) {
 					forwardXUnit( xunit);
 				}
@@ -174,12 +178,20 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	
 	
 	/**
-	 *  Generate the "per-dimenstion" portion of the xunit
+	 *  Generate the "per-dimension" portion of the xunit
+	 *  
 	 */
-	private String generateYUnit( Object structObj, int level) throws IllegalArgumentException {
+	private String getDimBase( Object structObj) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("/");
 		sb.append(structInspector.getStructFieldData(structObj,dimField));
+		
+		return sb.toString();
+	}
+
+	private List<String> generateYPaths( Object structObj, int level, List<String> prevLevels) throws IllegalArgumentException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("/");
 		
 		List nameList = (List) structInspector.getStructFieldData(structObj, attrNamesField);
 		List valueList = (List) structInspector.getStructFieldData(structObj, attrValuesField);
@@ -187,26 +199,47 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		if(nameList.size() != valueList.size()) {
 			throw new IllegalArgumentException("Number of atttribute names must equal number of attribute values");
 		}
-		for(int i=0;i< level; ++i) {
-		    sb.append("/");
-			String attrName = attrNameInspector.getPrimitiveJavaObject(nameList.get(i));
-			//// XXX TODO Format attribute value to escape slashes
-			String attrValue = attrValueInspector.getPrimitiveJavaObject(valueList.get(i));
-
-			sb.append(attrName);
-			sb.append("=");
-			sb.append(attrValue);
-		}
 	
-		return sb.toString();
+		List<String> retVal = new ArrayList<String>();
+		
+		String attrValue = attrValueInspector.getPrimitiveJavaObject(valueList.get(level));
+	    String attrName = attrNameInspector.getPrimitiveJavaObject(nameList.get(level));
+	    
+	    if( attrValue != null) {
+	    	for(String prefix : prevLevels) {
+	    		if(! attrValue.contains("|")) {
+	    			String ypath = prefix + "/" + attrName + "=" + attrValue;
+	    			LOG.info(" Adding YPATH " + ypath);
+	    			retVal.add(ypath);
+	    		} else{
+				   ///// If we want to emit multiple rows for an xunit, for a particular YPath
+				   ////  (ie. Both Asian and Hispanic ethnicity  )
+	    			String[] subVals = attrValue.split("\\|");
+	    		    for(String subVal : subVals) {
+	    			  String ypath = prefix + "/" + attrName + "=" + subVal;
+	    			  LOG.info(" MULTI VALUE " + ypath);
+	    			  retVal.add(ypath);
+	    		    }
+	    		}
+	    	}
+	    }
+	    return retVal;
 	}
 	
-	private List<String> generateAllYUnits( Object structObj) throws IllegalArgumentException {
+	private List<String> generateAllYPaths( Object structObj) throws IllegalArgumentException {
 		List nameList = (List) structInspector.getStructFieldData(structObj, attrNamesField);
 		List<String> retVals = new ArrayList<String>();
-		for(int i=1; i<=nameList.size(); ++i ) {
-		   retVals.add( generateYUnit(structObj,i));
+		List<String> prevLevel= new ArrayList<String>();
+		String dimBase = getDimBase( structObj);
+		if( nameList.size() > 0) {
+		   prevLevel.add( dimBase);
+		   for(int i=0; i<nameList.size(); ++i ) {
+			   List<String> nextLevel = generateYPaths( structObj, i,prevLevel);
+			   retVals.addAll( nextLevel);
+			   prevLevel = nextLevel;
+		   }
 		}
+		LOG.info(" ALL YPATHS for Struct OBJ for DIM " + dimBase + " = " + retVals.size());
 	    return retVals;	
 	}
 	
@@ -217,7 +250,7 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	////    to reduce garbage collection 
 	//// Also allow to specify some pruning logic
 	private List<String> combinations( Object structObj,  List<Object>  otherDims) {
-		List<String> thisYUnits = generateAllYUnits( structObj);
+		List<String> thisYUnits = generateAllYPaths( structObj);
 		if( otherDims.size() == 0 ) {
 			return thisYUnits;
 		} else {
