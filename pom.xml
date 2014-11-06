@@ -4,7 +4,7 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.7.2-jdb-SNAPSHOT</version>
+	<version>0.7.3-jdb-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Brickhouse</name>
 	<description>Extensions of Hive for the Data Developer</description>
@@ -40,9 +40,9 @@
 
 	<properties>
 	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-       <apache.hadoop.version>0.20.2</apache.hadoop.version>
-       <apache.hbase.version>0.92.1</apache.hbase.version>
-	   <apache.hive.version>0.10.0</apache.hive.version>
+        <apache.hadoop.version>2.4.0</apache.hadoop.version>
+        <apache.hbase.version>0.98.0-hadoop2</apache.hbase.version>
+        <apache.hive.version>0.13.0</apache.hive.version>
 	</properties>
 
 	<build>
@@ -183,13 +183,25 @@
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${apache.hadoop.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
             <version>${apache.hadoop.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
+            <artifactId>hbase-common</artifactId>
+            <version>${apache.hbase.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
             <version>${apache.hbase.version}</version>
         </dependency>
 		
