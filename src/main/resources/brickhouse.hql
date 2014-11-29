@@ -29,6 +29,7 @@ CREATE TEMPORARY FUNCTION union_max AS 'brickhouse.udf.collect.UnionMaxUDAF';
 CREATE TEMPORARY FUNCTION union_map AS 'brickhouse.udf.collect.UnionUDAF';
 CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
 CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
+CREATE TEMPORARY FUNCTION group_first AS 'brickhouse.udf.collect.FirstOfGroupUDAF';
 
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF'; 
