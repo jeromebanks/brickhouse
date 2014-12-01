@@ -19,6 +19,7 @@ package brickhouse.udf.xunit;
 
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.IllegalFormatException;
 import java.util.List;
 
@@ -26,6 +27,7 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -34,6 +36,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.log4j.Logger;
@@ -63,6 +66,8 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	private ListObjectInspector attrValuesInspector;
 	private StringObjectInspector attrValueInspector;
 	private String[] xunitFieldArr = new String[1];
+	
+	private IntObjectInspector maxDimInspector = null;
 
 	@Override
 	public void close() throws HiveException {
@@ -79,12 +84,19 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	public StructObjectInspector initialize(ObjectInspector[] objInspectorArr)
 			throws UDFArgumentException {
 		//// Need to make sure that it is our array of structs inspector 
-		if(objInspectorArr.length != 1 ) {
-		    usage(" Only one argument");
+		if(objInspectorArr.length > 2 ) {
+		    usage(" Only one or two arguments");
 		}
 		ObjectInspector objInsp = objInspectorArr[0];
 		if(objInsp.getCategory() != Category.LIST) {
-		   usage(" Must be a list");
+		   usage(" First arg must be a list");
+		}
+		
+		if( objInspectorArr.length >1 ) {
+			if( !(objInspectorArr[1] instanceof IntObjectInspector) ) {
+		       usage(" Number of dimensions must be a constant integer.");
+			}
+			maxDimInspector = (IntObjectInspector) objInspectorArr[1];
 		}
 		
 		listInspector = (ListObjectInspector) objInsp;
@@ -150,6 +162,10 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 
 		//// Always process the Global Unit 
 		forwardXUnit(GLOBAL_UNIT );
+		int maxDims = -1;
+		if(maxDimInspector != null) {
+			maxDims = maxDimInspector.get( args[1]);
+		}
 
 		try {
 			if(dimValuesList.size() > 0  ) {
@@ -159,9 +175,19 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 				List<String> allCombos = combinations( firstStruct, otherStructs);
 
 				totalXUnits += allCombos.size();
+				
 				LOG.info(" SIZE OF ALL XUNIT COMBINATIONS IS " + allCombos.size() + " TOTAL XUNITS SO FAR IS " + totalXUnits);
 				for( String xunit : allCombos ) {
-					forwardXUnit( xunit);
+					//// Simple pruning logic for now, 
+					//// Somehow don't generate otherwise ...
+					if(maxDims != -1 ) {
+						String[] splitPaths = xunit.split(",");
+						if( splitPaths.length <= maxDims) {
+					      forwardXUnit( xunit);
+						}
+					} else {
+					   forwardXUnit( xunit);
+					}
 				}
 			}
 		} catch(IllegalArgumentException illArg) {
@@ -188,6 +214,22 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		
 		return sb.toString();
 	}
+	
+	/**
+	 *  Clean out the
+	 */
+	private String clean( String attrVal) {
+		String trimVal = attrVal.trim();
+		if(trimVal.length() == 0) {
+			return null;
+		}
+		if(trimVal.toLowerCase().equals("null")) {
+			return null;
+		}
+		String noSlash = trimVal.replace( '/',' ');
+		
+		return noSlash;
+	}
 
 	private List<String> generateYPaths( Object structObj, int level, List<String> prevLevels) throws IllegalArgumentException {
 		StringBuilder sb = new StringBuilder();
@@ -208,18 +250,22 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	    if( attrValue != null) {
 	    	for(String prefix : prevLevels) {
 	    		if(! attrValue.contains("|")) {
-	    			String ypath = prefix + "/" + attrName + "=" + attrValue;
-	    			LOG.info(" Adding YPATH " + ypath);
-	    			retVal.add(ypath);
+	    			String cleanVal = clean( attrValue);
+	    			if(cleanVal != null) {
+	    			   String ypath = prefix + "/" + attrName + "=" + cleanVal;
+	    			   retVal.add(ypath);
+	    			}
 	    		} else{
 				   ///// If we want to emit multiple rows for an xunit, for a particular YPath
 				   ////  (ie. Both Asian and Hispanic ethnicity  )
-	    			String[] subVals = attrValue.split("\\|");
-	    		    for(String subVal : subVals) {
-	    			  String ypath = prefix + "/" + attrName + "=" + subVal;
-	    			  LOG.info(" MULTI VALUE " + ypath);
-	    			  retVal.add(ypath);
-	    		    }
+	    		  String[] subVals = attrValue.split("\\|");
+	    		  for(String subVal : subVals) {
+	    			  String cleanSubVal = clean( subVal);
+	    			  if( cleanSubVal != null) {
+	    			    String ypath = prefix + "/" + attrName + "=" + cleanSubVal;
+	    			    retVal.add(ypath);
+	    			  }
+	    		  }
 	    		}
 	    	}
 	    }
@@ -239,7 +285,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 			   prevLevel = nextLevel;
 		   }
 		}
-		LOG.info(" ALL YPATHS for Struct OBJ for DIM " + dimBase + " = " + retVals.size());
 	    return retVals;	
 	}
 	

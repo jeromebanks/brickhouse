@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
@@ -43,8 +44,14 @@ import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardConstantMapObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.ByteObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.FloatObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.log4j.Logger;
@@ -181,11 +188,16 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			String key = getByteString( parameters[1], inputKeyOI);
 			String val = getByteString( parameters[2], inputValOI);
 			
-			PutBuffer kvBuff = (PutBuffer) agg;
-			kvBuff.addKeyValue( key,val);
+			if( key != null && val != null ) {
+			  PutBuffer kvBuff = (PutBuffer) agg;
+			  kvBuff.addKeyValue( key,val);
 
-			if(kvBuff.putList.size() >= batchSize) {
+			  if(kvBuff.putList.size() >= batchSize) {
 				batchUpdate( kvBuff, false);
+			  }
+			} else {
+				/// XXX TODO increment a counter
+				LOG.error(" Attempting to insert NULL Key or value ; Key == " + key + " ; value = " + val);
 			}
 		}
 		
@@ -197,6 +209,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		 * @return
 		 */
 		private String getByteString( Object obj, PrimitiveObjectInspector objInsp) {
+			if( obj == null)
+				return null;
 		    switch( objInsp.getPrimitiveCategory() ) {
 		    case STRING : 
 		        StringObjectInspector strInspector = (StringObjectInspector) objInsp;
@@ -204,8 +218,39 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		    case BINARY : 
 		        BinaryObjectInspector binInspector = (BinaryObjectInspector) objInsp;
 		        return new String(binInspector.getPrimitiveJavaObject( obj));
-		    /// XXX TODO interpret other types, like ints or doubled 
+		    case LONG :
+		    	LongObjectInspector longInspector = (LongObjectInspector) objInsp;
+		    	long longVal = longInspector.get( obj);
+
+		    	byte[] longBytes = Bytes.toBytes(longVal);
+		    	return new String(longBytes);
+		    case DOUBLE :
+		    	DoubleObjectInspector doubleInspector = (DoubleObjectInspector) objInsp;
+		    	double doubleVal = doubleInspector.get(obj);
+		    	byte[] dblBytes = Bytes.toBytes(doubleVal);
+		    	return new String(dblBytes);
+		    case INT :
+		    	IntObjectInspector intInspector = (IntObjectInspector) objInsp;
+		    	int intVal = intInspector.get(obj);
+		    	byte[] intBytes = Bytes.toBytes(intVal);
+		    	return new String(intBytes);
+		    case FLOAT :
+		    	FloatObjectInspector floatInspector = (FloatObjectInspector) objInsp;
+		    	float floatVal = floatInspector.get(obj);
+		    	byte[] floatBytes = Bytes.toBytes(floatVal);
+		    	return new String(floatBytes);
+		    case SHORT :
+		    	ShortObjectInspector shortInspector = (ShortObjectInspector) objInsp;
+		    	short shortVal = shortInspector.get(obj);
+		    	byte[] shortBytes = Bytes.toBytes(shortVal);
+		    	return new String(shortBytes);
+		    case BYTE :
+		    	ByteObjectInspector byteInspector = (ByteObjectInspector) objInsp;
+		    	byte byteVal = byteInspector.get(obj);
+		    	byte[] byteBytes = new byte[] { byteVal } ;
+		    	return new String(byteBytes);
 		     default :
+		    	 LOG.error(" Unknown Primitive Category " + objInsp.getCategory());
 		        return null; 
 		    }
 		}
