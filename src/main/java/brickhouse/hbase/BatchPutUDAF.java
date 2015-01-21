@@ -89,10 +89,9 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 
 			public void reset() { putList = new ArrayList<Put>(); }
 
-			public void addKeyValue( String key, String val) throws HiveException{
-				Put thePut = new Put(key.getBytes());
-				thePut.add( getFamily(), getQualifier(), val.getBytes());
-				thePut.setWriteToWAL(false);
+			public void addKeyValue( byte[] key, byte[] val) throws HiveException{
+				Put thePut = new Put(key);
+				thePut.add( getFamily(), getQualifier(), val);
 				putList.add( thePut);
 			}
 		}
@@ -185,8 +184,8 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		@Override
 		public void iterate(AggregationBuffer agg, Object[] parameters)
 				throws HiveException {
-			String key = getByteString( parameters[1], inputKeyOI);
-			String val = getByteString( parameters[2], inputValOI);
+			byte[] key = HTableFactory.getByteArray( parameters[1], inputKeyOI);
+			byte[] val = HTableFactory.getByteArray( parameters[2], inputValOI);
 			
 			if( key != null && val != null ) {
 			  PutBuffer kvBuff = (PutBuffer) agg;
@@ -201,59 +200,6 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			}
 		}
 		
-		
-		/**
-		 * 
-		 * @param obj
-		 * @param objInsp
-		 * @return
-		 */
-		private String getByteString( Object obj, PrimitiveObjectInspector objInsp) {
-			if( obj == null)
-				return null;
-		    switch( objInsp.getPrimitiveCategory() ) {
-		    case STRING : 
-		        StringObjectInspector strInspector = (StringObjectInspector) objInsp;
-		        return strInspector.getPrimitiveJavaObject(obj);
-		    case BINARY : 
-		        BinaryObjectInspector binInspector = (BinaryObjectInspector) objInsp;
-		        return new String(binInspector.getPrimitiveJavaObject( obj));
-		    case LONG :
-		    	LongObjectInspector longInspector = (LongObjectInspector) objInsp;
-		    	long longVal = longInspector.get( obj);
-
-		    	byte[] longBytes = Bytes.toBytes(longVal);
-		    	return new String(longBytes);
-		    case DOUBLE :
-		    	DoubleObjectInspector doubleInspector = (DoubleObjectInspector) objInsp;
-		    	double doubleVal = doubleInspector.get(obj);
-		    	byte[] dblBytes = Bytes.toBytes(doubleVal);
-		    	return new String(dblBytes);
-		    case INT :
-		    	IntObjectInspector intInspector = (IntObjectInspector) objInsp;
-		    	int intVal = intInspector.get(obj);
-		    	byte[] intBytes = Bytes.toBytes(intVal);
-		    	return new String(intBytes);
-		    case FLOAT :
-		    	FloatObjectInspector floatInspector = (FloatObjectInspector) objInsp;
-		    	float floatVal = floatInspector.get(obj);
-		    	byte[] floatBytes = Bytes.toBytes(floatVal);
-		    	return new String(floatBytes);
-		    case SHORT :
-		    	ShortObjectInspector shortInspector = (ShortObjectInspector) objInsp;
-		    	short shortVal = shortInspector.get(obj);
-		    	byte[] shortBytes = Bytes.toBytes(shortVal);
-		    	return new String(shortBytes);
-		    case BYTE :
-		    	ByteObjectInspector byteInspector = (ByteObjectInspector) objInsp;
-		    	byte byteVal = byteInspector.get(obj);
-		    	byte[] byteBytes = new byte[] { byteVal } ;
-		    	return new String(byteBytes);
-		     default :
-		    	 LOG.error(" Unknown Primitive Category " + objInsp.getCategory());
-		        return null; 
-		    }
-		}
 		
 		protected void batchUpdate( PutBuffer  kvBuff, boolean flushCommits) throws HiveException { 
 			try {
@@ -307,7 +253,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			   String key = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(kvList.get(0));
 			   String val = ((StringObjectInspector)(subListOI.getListElementObjectInspector())).getPrimitiveJavaObject(kvList.get(1));
 			   
-			   myagg.addKeyValue( key, val);
+			   myagg.addKeyValue( key.getBytes(), val.getBytes());
 			   
 			}
 			

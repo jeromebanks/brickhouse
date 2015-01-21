@@ -24,7 +24,7 @@ import org.apache.hadoop.hive.ql.exec.UDF;
 
 /**
  * 
- * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
+ * Creates a session id for an index and a time stamp. Default length between sessions is 30 minute = 1800000 milliseconds
  *   
  *   The input to this function is assumed to be sorted by a user_key , and by time, and is useful for creating sessions from
  *     user activity data. (i.e. web logs ).  The timestamp is assumed to be bigint, representing the number of milliseconds from
@@ -34,22 +34,26 @@ import org.apache.hadoop.hive.ql.exec.UDF;
  *      
  *    SELECT user_key, 
  *          session_id,
+ *          collect( event_type) as events,
  *          min( tstamp) as session_start,
  *          max( tstamp ) as session_end
  *    FROM 
  *      ( SELECT user_key,
- *               sessionize( user_key, tstamp )
+ *               sessionize( user_key, tstamp ),
+ *               event_type,
  *          FROM weblogs
  *       DISTRIBUTE BY user_key
  *       SORT BY user_key, tsamp 
  *     ) sz
  *   GROUP BY
  *     user_key, session_id;
+ *     
+ *  To avoid memory overruns, one can also specify the maximum number of values to be considered in a session, after which a new session id is calculated
  * 
  */
 @Description(
 		name="sessionize", 
-		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
+		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify time betweeen sessions in milliseconds. Optional fourth parameter specifying maximum session size.",
 		extended="SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
 
 public class SessionizeUDF extends UDF {

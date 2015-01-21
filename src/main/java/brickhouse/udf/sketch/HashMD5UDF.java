@@ -22,6 +22,9 @@ public class HashMD5UDF extends UDF {
 
 
 	public Long evaluate( String str) {
+		if(str == null) {
+			return null;
+		}
 		HashCode hc = hash.hashString( str);
 
 		return hc.asLong();

@@ -18,8 +18,7 @@ package brickhouse.udf.collect;
 
 
 /**
- * Similar to Ruby collect, 
- *   return an array with all the values
+ *  Gather  returns an array of all the unique elements in an aggregateion group.
  */
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
 
-@Description(name="collect",
+@Description(name="gather",
 value = "_FUNC_(x) - Returns an array of all the elements in the aggregation group " 
 )
 public class GatherUDAF extends AbstractGenericUDAFResolver {

@@ -9,11 +9,20 @@ import java.util.Map.Entry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardConstantMapObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.ByteObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.FloatObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.log4j.Logger;
 
@@ -69,6 +78,7 @@ public class HTableFactory {
 			}
 			StandardConstantMapObjectInspector constMapInsp = (StandardConstantMapObjectInspector) objInspector;
 			Map<?,?> uninspMap  =  constMapInsp.getWritableConstantValue();
+			LOG.info( " Uninsp Map = " + uninspMap + " size is " + uninspMap.size());
 			System.out.println( " Uninsp Map = " + uninspMap + " size is " + uninspMap.size());
 			Map<String,String> configMap = new HashMap<String,String>();
 			for(Object uninspKey : uninspMap.keySet()) {
@@ -76,8 +86,8 @@ public class HTableFactory {
 				String key = ((StringObjectInspector)constMapInsp.getMapKeyObjectInspector()).getPrimitiveJavaObject(uninspKey);
 				String val = ((StringObjectInspector)constMapInsp.getMapValueObjectInspector()).getPrimitiveJavaObject(uninspVal);
 						
-				LOG.info(" Key " + key + " VAL = " + configMap.get(key) );
-				System.out.println(" Key " + key + " VAL = " + configMap.get(key) );
+				LOG.info(" Key " + key + " VAL = " + val );
+				System.out.println(" Key " + key + " VAL = " + val );
 				configMap.put( key, val);
 			}
 			return configMap;
@@ -99,5 +109,63 @@ public class HTableFactory {
 	      throw new RuntimeException(errorMsg);
 	    }
 	  }
+	  
+	  
+	  /**
+	   *  Return a String containing a Byte array 
+	   *   corresponding to a primitive object. 
+	   *   
+	   * @param obj
+	   * @param objInsp
+	   * @return
+	   */
+	 public static byte[] getByteArray( Object obj, PrimitiveObjectInspector objInsp) {
+			if( obj == null)
+				return null;
+		    switch( objInsp.getPrimitiveCategory() ) {
+		    case STRING : 
+		        StringObjectInspector strInspector = (StringObjectInspector) objInsp;
+		        return strInspector.getPrimitiveJavaObject(obj).getBytes();
+		    case BINARY : 
+		        BinaryObjectInspector binInspector = (BinaryObjectInspector) objInsp;
+		        return (binInspector.getPrimitiveJavaObject( obj));
+		    case LONG :
+		    	LongObjectInspector longInspector = (LongObjectInspector) objInsp;
+		    	long longVal = longInspector.get( obj);
+		    	LOG.info( " GET BYTE STRING LONG IS " + longVal );
+
+		    	byte[] longBytes = Bytes.toBytes(longVal);
+		    	return (longBytes);
+		    case DOUBLE :
+		    	DoubleObjectInspector doubleInspector = (DoubleObjectInspector) objInsp;
+		    	double doubleVal = doubleInspector.get(obj);
+		    	byte[] dblBytes = Bytes.toBytes(doubleVal);
+		    	return (dblBytes);
+		    case INT :
+		    	IntObjectInspector intInspector = (IntObjectInspector) objInsp;
+		    	int intVal = intInspector.get(obj);
+		    	byte[] intBytes = Bytes.toBytes(intVal);
+		    	return (intBytes);
+		    case FLOAT :
+		    	FloatObjectInspector floatInspector = (FloatObjectInspector) objInsp;
+		    	float floatVal = floatInspector.get(obj);
+		    	byte[] floatBytes = Bytes.toBytes(floatVal);
+		    	return (floatBytes);
+		    case SHORT :
+		    	ShortObjectInspector shortInspector = (ShortObjectInspector) objInsp;
+		    	short shortVal = shortInspector.get(obj);
+		    	byte[] shortBytes = Bytes.toBytes(shortVal);
+		    	return (shortBytes);
+		    case BYTE :
+		    	ByteObjectInspector byteInspector = (ByteObjectInspector) objInsp;
+		    	byte byteVal = byteInspector.get(obj);
+		    	byte[] byteBytes = new byte[] { byteVal } ;
+		    	return (byteBytes);
+		     default :
+		    	 LOG.error(" Unknown Primitive Category " + objInsp.getCategory());
+		        return null; 
+		    }
+		}
+		
 
 }

@@ -9,6 +9,7 @@ CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
 
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
 CREATE TEMPORARY FUNCTION collect_merge_max AS 'brickhouse.udf.collect.CollectMergeMaxUDAF';
+CREATE TEMPORARY FUNCTION collect_capped AS 'brickhouse.udf.collect.CollectCappedUDAF';
 CREATE TEMPORARY FUNCTION cast_array AS 'brickhouse.udf.collect.CastArrayUDF';
 CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastMapUDF';
 CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDF';
@@ -79,6 +80,7 @@ CREATE TEMPORARY FUNCTION day_diff AS 'brickhouse.udf.date.DayDiffUDF';
 
 CREATE TEMPORARY FUNCTION hbase_balanced_key AS 'brickhouse.hbase.GenerateBalancedKeyUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF';
+CREATE TEMPORARY FUNCTION hbase_batch_put_array AS 'brickhouse.hbase.BatchPutArrayUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_get AS 'brickhouse.hbase.BatchGetUDF';
 CREATE TEMPORARY FUNCTION hbase_cached_get AS 'brickhouse.hbase.CachedGetUDF';
 CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
