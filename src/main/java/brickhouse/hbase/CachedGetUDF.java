@@ -84,16 +84,25 @@ public class CachedGetUDF extends GenericUDF {
 
 		public String loadString(String key) throws Exception {
 			Get keyGet = new Get(key.getBytes());
+			if(configMap == null ) {
+				LOG.info(" Ay Yai Yai !!! ConfigMap is null ");
+				return null;
+			}
 			HTable htable = HTableFactory.getHTable( configMap);
+
 			Result res = htable.get( keyGet);
 			KeyValue kv = res.getColumnLatest(configMap.get( HTableFactory.FAMILY_TAG).getBytes() ,configMap.get( HTableFactory.QUALIFIER_TAG).getBytes() );
 			if(kv == null) {
 				throw new NoSuchElementException("No value found for " + key);
 			}
 			byte[] bytes = kv.getValue();
-			String jsonStr =  new String(bytes);
+			if(bytes != null) {
+			   String jsonStr =  new String(bytes);
 			
-			return jsonStr;
+			   return jsonStr;
+			} else {
+				return null;
+			}
 		}
 		
 	};
@@ -105,6 +114,8 @@ public class CachedGetUDF extends GenericUDF {
 	
 	public Object getValue(final String key) {
 		try {
+			if(key == null) 
+				return null;
             ++numCalls;
 			Object l = cache.get(key, new Callable<Object>() {
                 @Override
@@ -118,14 +129,14 @@ public class CachedGetUDF extends GenericUDF {
 			}
 			return l;
 		} catch (UncheckedExecutionException e) {
-			LOG.error("Error while parsing string " , e);
 			if( (++numErrors % 1000) == 0 ) {
+			    LOG.error("Error while parsing string " , e);
 				LOG.info( "Num Errors = " + numErrors + ";  Missed " + numMisses + " features key = " + key + " Num hits = " + (numCalls - numMisses));
 			}
 			return null;
 		} catch (Exception unexpected) {
-			LOG.error("Error while parsing string " , unexpected);
 			if( (++numErrors % 1000) == 0 ) {
+			    LOG.error("Error while parsing string " , unexpected);
 				LOG.info( "Num Errors = " + numErrors + "; Missed " + numMisses + " features key = " + key + " Num hits = " + (numCalls - numMisses));
 			}
 			return null;
