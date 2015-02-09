@@ -83,7 +83,7 @@ public class UnionUDAF extends AbstractGenericUDAFResolver {
 			super.init(m, parameters);
 			// init output object inspectors
 			// The output of a partial aggregation is a list
-			if (m == Mode.PARTIAL1) {
+			if (m == Mode.PARTIAL1 || m == Mode.COMPLETE) {
 				inputMapOI = (MapObjectInspector) parameters[0];
 				
 				inputKeyOI = inputMapOI.getMapKeyObjectInspector();
