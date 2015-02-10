@@ -76,7 +76,7 @@ CREATE TEMPORARY FUNCTION add_days AS 'brickhouse.udf.date.AddDaysUDF';
 CREATE TEMPORARY FUNCTION add_hours AS 'brickhouse.udf.date.AddHoursUDF';
 CREATE TEMPORARY FUNCTION date_range AS 'brickhouse.udf.date.DateRangeUDTF';
 CREATE TEMPORARY FUNCTION day_diff AS 'brickhouse.udf.date.DayDiffUDF';
-CREATE TEMPORARY FUNCTION add_hours AS 'brickhouse.udf.date.AddHoursUDF';
+CREATE TEMPORARY FUNCTION dayofyear AS 'brickhouse.udf.date.DayOfYearUDF';
 
 CREATE TEMPORARY FUNCTION hbase_balanced_key AS 'brickhouse.hbase.GenerateBalancedKeyUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF';
@@ -85,6 +85,7 @@ CREATE TEMPORARY FUNCTION hbase_cached_get AS 'brickhouse.hbase.CachedGetUDF';
 CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
 CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
 CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
+CREATE TEMPORARY FUNCTION hbase_salt AS 'brickhouse.hbase.GenerateSaltUDF';
 
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
