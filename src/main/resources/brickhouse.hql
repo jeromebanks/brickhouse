@@ -85,7 +85,6 @@ CREATE TEMPORARY FUNCTION hbase_cached_get AS 'brickhouse.hbase.CachedGetUDF';
 CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
 CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
 CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
-CREATE TEMPORARY FUNCTION hbase_salt AS 'brickhouse.hbase.GenerateSaltUDF';
 
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
