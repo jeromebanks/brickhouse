@@ -77,6 +77,7 @@ CREATE TEMPORARY FUNCTION add_days AS 'brickhouse.udf.date.AddDaysUDF';
 CREATE TEMPORARY FUNCTION add_hours AS 'brickhouse.udf.date.AddHoursUDF';
 CREATE TEMPORARY FUNCTION date_range AS 'brickhouse.udf.date.DateRangeUDTF';
 CREATE TEMPORARY FUNCTION day_diff AS 'brickhouse.udf.date.DayDiffUDF';
+CREATE TEMPORARY FUNCTION add_hours AS 'brickhouse.udf.date.AddHoursUDF';
 
 CREATE TEMPORARY FUNCTION hbase_balanced_key AS 'brickhouse.hbase.GenerateBalancedKeyUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put AS 'brickhouse.hbase.BatchPutUDAF';
