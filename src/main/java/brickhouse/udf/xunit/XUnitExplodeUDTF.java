@@ -238,6 +238,10 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		List nameList = (List) structInspector.getStructFieldData(structObj, attrNamesField);
 		List valueList = (List) structInspector.getStructFieldData(structObj, attrValuesField);
 		
+		if( nameList == null || valueList == null) {
+			return null;
+		}
+		
 		if(nameList.size() != valueList.size()) {
 			throw new IllegalArgumentException("Number of atttribute names must equal number of attribute values");
 		}
@@ -281,7 +285,9 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		   prevLevel.add( dimBase);
 		   for(int i=0; i<nameList.size(); ++i ) {
 			   List<String> nextLevel = generateYPaths( structObj, i,prevLevel);
-			   retVals.addAll( nextLevel);
+			   if( nextLevel != null) {
+			     retVals.addAll( nextLevel);
+			   }
 			   prevLevel = nextLevel;
 		   }
 		}
