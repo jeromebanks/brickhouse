@@ -29,6 +29,7 @@ CREATE TEMPORARY FUNCTION union_max AS 'brickhouse.udf.collect.UnionMaxUDAF';
 CREATE TEMPORARY FUNCTION union_map AS 'brickhouse.udf.collect.UnionUDAF';
 CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
 CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
+CREATE TEMPORARY FUNCTION array_constants AS 'brickhouse.udf.collect.ArrayOfConstantsUDF';
 
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF'; 
@@ -99,5 +100,5 @@ CREATE TEMPORARY FUNCTION hll_est_cardinality AS 'brickhouse.udf.hll.EstimateCar
 CREATE TEMPORARY FUNCTION xunit_explode AS 'brickhouse.udf.xunit.XUnitExplodeUDTF';
 CREATE TEMPORARY FUNCTION get_ypath AS 'brickhouse.udf.xunit.GetYPathUDF';
 CREATE TEMPORARY FUNCTION remove_ypath AS 'brickhouse.udf.xunit.RemoveYPathUDF';
-
+CREATE TEMPORARY FUNCTION getsegments AS 'brickhouse.udf.xunit.GetYPathSegmentsUDF';
 
