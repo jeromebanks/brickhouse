@@ -105,7 +105,7 @@ public class GetYPathSegmentsUDF extends GenericUDF {
             if (SEGMENTABLE_YPATH_LIST.contains(parentPart)) {
                 segmentableXUnit = ypath;
             } else {
-                //Only add segments of the ypath that have more than 1 path separator (/)
+                // Only add segments of the ypath that have more than 1 path separator (/)
                 if(ypathParts.length < 3) {
                     continue;
                 }
