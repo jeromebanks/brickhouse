@@ -99,7 +99,11 @@ public class GetYPathSegmentsUDF extends GenericUDF {
         List<String> segments = new ArrayList<String>();
 
         String xunit = elementOI.getPrimitiveJavaObject(arguments[0].get());
-        for( String ypath: xunit.split(",")) {
+        // some ypaths have comma in the ypath so handle such ypaths accordingly
+        for( String ypath: xunit.split(",/")) {
+           if(! ypath.startsWith("/"))
+               ypath = "/" + ypath;
+
             String[] ypathParts = ypath.split("/");
             String parentPart = ypath.length() > 1 ? "/"+ ypathParts[1] : null;
             if (SEGMENTABLE_YPATH_LIST.contains(parentPart)) {
