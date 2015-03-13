@@ -1,6 +1,8 @@
 Welcome to the Brickhouse
 =========================
 
+![Build Status](https://travis-ci.org/klout/brickhouse.svg)
+
    Brickhouse is a collection of UDF's for Hive to improve developer 
    productivity, and the scalability and robustness of Hive queries.
    
