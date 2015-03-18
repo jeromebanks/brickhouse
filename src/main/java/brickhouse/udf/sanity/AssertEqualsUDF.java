@@ -29,7 +29,7 @@ public class AssertEqualsUDF extends UDF {
 			System.err.println(" Null values found :: " + val1 + " == " + val2);
 			throw new RuntimeException(" Null values found :: " + val1 + " == " + val2);
 		}
-		if( !( val1 == val2 ) ) {
+		if( ! val1.equals(val2) ) {
 			LOG.error(" Assertion Not Met :: ! ( " + val1 + " == " + val2 + " ) ");
 			System.err.println(" Assertion Not Met :: ! ( " + val1 + " == " + val2 + " ) ");
 			throw new RuntimeException(" Assertion Not Met :: ! ( " + val1 + " == " + val2 + " ) ");
