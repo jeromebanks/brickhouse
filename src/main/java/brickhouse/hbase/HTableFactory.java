@@ -40,6 +40,7 @@ public class HTableFactory {
 	  static  String TABLE_NAME_TAG = "table_name";
 	  static  String ZOOKEEPER_QUORUM_TAG = "hbase.zookeeper.quorum";
 	  static  String AUTOFLUSH_TAG = "hbase.client.autoflush";
+      static  String OVERWRITE_CELL_TAG = "brickhouse.overwrite.cell";
 
 	  private static Map<String, HTable> htableMap = new HashMap<String,HTable>();
 	  private static Configuration hbConfig;
