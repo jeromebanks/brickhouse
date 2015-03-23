@@ -83,6 +83,9 @@ public class CachedGetUDF extends GenericUDF {
 			
 
 		public String loadString(String key) throws Exception {
+			if(key == null) {
+				return null;
+			}
 			Get keyGet = new Get(key.getBytes());
 			if(configMap == null ) {
 				LOG.info(" Ay Yai Yai !!! ConfigMap is null ");

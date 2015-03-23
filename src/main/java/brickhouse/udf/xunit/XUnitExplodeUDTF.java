@@ -176,7 +176,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 
 				totalXUnits += allCombos.size();
 				
-				LOG.info(" SIZE OF ALL XUNIT COMBINATIONS IS " + allCombos.size() + " TOTAL XUNITS SO FAR IS " + totalXUnits);
 				for( String xunit : allCombos ) {
 					//// Simple pruning logic for now, 
 					//// Somehow don't generate otherwise ...

@@ -58,13 +58,13 @@ import org.apache.log4j.Logger;
 
 /**
  *   Simple UDF for doing batch GET's from an HBase table ..
+ *   
  *  Not intended for doing massive reads from HBase,
  *   but only when relatively few rows are being read.  
- *   
  *
  */
 @Description(name="hbase_batch_get",
-value = "_FUNC_(table,key,family) - Do a single HBase Get on a table " 
+value = "_FUNC_(config, key_array, type) - Do a batch HBase Put on a table, given an array of keys and an optional type field " 
 )
 public class BatchGetUDF extends GenericUDF {
 	private static final Logger LOG = Logger.getLogger( BatchGetUDF.class);
@@ -78,7 +78,6 @@ public class BatchGetUDF extends GenericUDF {
 	private HTable table;
 
 	
-	///public List<String> evaluate( Map<String,String> config, List<String> keys) {
 	public Object evaluate(DeferredObject[] arg0) throws HiveException {
 		try {
 		   if(table == null)

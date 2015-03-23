@@ -121,8 +121,6 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		private StandardListObjectInspector listKVOI;
 		private Map<String,String> configMap;
 		
-		private HTable table;
-
 
 
 		public ObjectInspector init(Mode m, ObjectInspector[] parameters)
@@ -147,17 +145,10 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 				inputKeyOI = (PrimitiveObjectInspector) parameters[1];
 				inputValOI = (PrimitiveObjectInspector) parameters[2];
 				
-				
-				try {
-					LOG.info(" Initializing HTable ");
-					table = HTableFactory.getHTable( configMap);
-					
-					if(configMap.containsKey(BATCH_SIZE_TAG)) {
-						batchSize = Integer.parseInt( configMap.get( BATCH_SIZE_TAG));
-					}
-				} catch (IOException e) {
-					throw new HiveException(e);
+				if(configMap.containsKey(BATCH_SIZE_TAG)) {
+					batchSize = Integer.parseInt( configMap.get( BATCH_SIZE_TAG));
 				}
+					
 			} else {
 			  listKVOI = (StandardListObjectInspector) parameters[0];
 				
