@@ -17,6 +17,8 @@ package brickhouse.hbase;
  **/
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +56,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
 /**
@@ -66,10 +69,8 @@ value = "_FUNC_(config_map, key, value) - Perform batch HBase updates of a table
 )
 public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 	private static final Logger LOG = Logger.getLogger( BatchPutUDAF.class);
-	
 
-
-	@Override
+    @Override
 	public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
 			throws SemanticException {
 		for(int i=0; i<parameters.length; ++i) {
@@ -81,7 +82,23 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 	}
 	
 	public static class BatchPutUDAFEvaluator extends GenericUDAFEvaluator {
-		public class PutBuffer implements AggregationBuffer{
+        private Reporter reporter;
+
+        private Reporter getReporter() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            if(reporter == null) {
+                Class clazz = Class.forName("org.apache.hadoop.hive.ql.exec.MapredContext");
+                Method staticGetMethod = clazz.getMethod("get");
+                Object mapredObj = staticGetMethod.invoke(null);
+                Class mapredClazz = mapredObj.getClass();
+                Method getReporter = mapredClazz.getMethod("getReporter");
+                Object reporterObj=  getReporter.invoke( mapredObj);
+
+                reporter = (Reporter)reporterObj;
+            }
+            return reporter;
+        }
+
+        public class PutBuffer implements AggregationBuffer{
 			public List<Put> putList;
 
 			public PutBuffer() {
@@ -195,8 +212,11 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 				batchUpdate( kvBuff, false);
 			  }
 			} else {
-				/// XXX TODO increment a counter
-				LOG.error(" Attempting to insert NULL Key or value ; Key == " + key + " ; value = " + val);
+                try {
+                    getReporter().getCounter(BatchPutUDAFCounter.NULL_KEY_OR_VALUE_INSERT_FAILURE).increment(1l);
+                } catch(Exception e) {
+                    throw new HiveException("Error while accessing Hadoop Counters", e);
+                }
 			}
 		}
 		
@@ -316,6 +336,9 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		}
 	}
 
+    private static enum BatchPutUDAFCounter {
+        NULL_KEY_OR_VALUE_INSERT_FAILURE;
+    }
 
 
 }
