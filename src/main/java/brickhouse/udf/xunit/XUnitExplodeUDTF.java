@@ -76,43 +76,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	}
 	
 	
-	//// XXX Create Class which models the XUnit 
-	/// Make them immutable, like strings,
-	/// So we can build them up from previous
-	private static class XUnitDesc {
-		private YPathDesc[] _ypaths;
-		
-		public XUnitDesc( YPathDesc yp) {
-	       _ypaths = new YPathDesc[]{ yp };
-		}
-		public XUnitDesc( YPathDesc[] yps) {
-	       _ypaths = yps;
-		}
-		
-		public XUnitDesc addYPath(YPathDesc yp) {
-		   YPathDesc[] newYps = new YPathDesc[ _ypaths.length + 1];
-		   //// Prepend the YPath ..
-		   newYps[0] = yp;
-		   for(int i=1; i<newYps.length; ++i) {
-			  newYps[i] = _ypaths[i -1];
-		   }
-		   return new XUnitDesc( newYps);
-		}
-		
-		public int numDims() { return _ypaths.length; }
-		
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			sb.append( _ypaths[0].toString() );
-			for(int i=1; i<_ypaths.length; ++i) {
-		       sb.append(',');
-		       sb.append( _ypaths[i].toString() );
-			}
-			return sb.toString();
-		}
-		
-	}
-	
 	public XUnitDesc fromPath(YPathDesc yp ) {
 	  return new XUnitDesc( yp);
 	}
@@ -123,50 +86,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	
 	public YPathDesc appendAttribute( YPathDesc yp, String attrName, String attrValue) {
 	   return yp.addAttribute(attrName, attrValue);
-	}
-	
-	private static class YPathDesc {
-		private String _dimName;
-	    private String[] _attrNames;
-	    private String[] _attrValues;
-		
-		public YPathDesc(String dimName) {
-			_dimName = dimName;
-			_attrNames = new String[0];
-			_attrValues = new String[0];
-		}
-		public YPathDesc( String dimName, String[] attrNames, String[] attrValues) {
-		   _dimName = dimName;
-	       _attrNames = attrNames;
-	       _attrValues = attrValues;
-		}
-		
-		public int numLevels() { return _attrNames.length; }
-
-		public YPathDesc addAttribute( String attrName, String attrValue) {
-			String[] newAttrNames = new String[ _attrNames.length + 1];
-			String[] newAttrValues = new String[ _attrValues.length + 1];
-			for(int i=0; i<_attrNames.length; ++i) {
-			  newAttrNames[i] = _attrNames[i];
-			  newAttrValues[i] = _attrValues[i];
-			}
-			newAttrNames[ _attrNames.length] = attrName;
-			newAttrValues[ _attrNames.length] = attrValue;
-		    return new YPathDesc( _dimName, newAttrNames, newAttrValues);
-		}
-	    
-	    public String toString() {
-	       StringBuilder sb = new StringBuilder("/");	
-	       sb.append( _dimName);
-	       for(int i=0; i<_attrNames.length; ++i) {
-	    	  sb.append('/');
-	    	  sb.append(_attrNames[i]);
-	    	  sb.append('=');
-	    	  sb.append(_attrValues[i]);
-	       }
-	       return sb.toString();
-	    }
-	    
 	}
 	
 	/**
@@ -373,6 +292,7 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	    		}
 	    	}
 	        prevYPaths = nextPrevYPaths;
+	        nextPrevYPaths = new ArrayList<YPathDesc>();
 	    }
 	    return retVal;
 	}
