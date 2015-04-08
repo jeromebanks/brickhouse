@@ -68,12 +68,118 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	private String[] xunitFieldArr = new String[1];
 	
 	private IntObjectInspector maxDimInspector = null;
+    private int maxDims = -1;
 
 	@Override
 	public void close() throws HiveException {
 		
 	}
 	
+	
+	//// XXX Create Class which models the XUnit 
+	/// Make them immutable, like strings,
+	/// So we can build them up from previous
+	private static class XUnitDesc {
+		private YPathDesc[] _ypaths;
+		
+		public XUnitDesc( YPathDesc yp) {
+	       _ypaths = new YPathDesc[]{ yp };
+		}
+		public XUnitDesc( YPathDesc[] yps) {
+	       _ypaths = yps;
+		}
+		
+		public XUnitDesc addYPath(YPathDesc yp) {
+		   YPathDesc[] newYps = new YPathDesc[ _ypaths.length + 1];
+		   //// Prepend the YPath ..
+		   newYps[0] = yp;
+		   for(int i=1; i<newYps.length; ++i) {
+			  newYps[i] = _ypaths[i -1];
+		   }
+		   return new XUnitDesc( newYps);
+		}
+		
+		public int numDims() { return _ypaths.length; }
+		
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append( _ypaths[0].toString() );
+			for(int i=1; i<_ypaths.length; ++i) {
+		       sb.append(',');
+		       sb.append( _ypaths[i].toString() );
+			}
+			return sb.toString();
+		}
+		
+	}
+	
+	public XUnitDesc fromPath(YPathDesc yp ) {
+	  return new XUnitDesc( yp);
+	}
+	
+	public XUnitDesc addYPath(XUnitDesc xunit , YPathDesc yp) {
+	   return xunit.addYPath( yp);
+	}
+	
+	public YPathDesc appendAttribute( YPathDesc yp, String attrName, String attrValue) {
+	   return yp.addAttribute(attrName, attrValue);
+	}
+	
+	private static class YPathDesc {
+		private String _dimName;
+	    private String[] _attrNames;
+	    private String[] _attrValues;
+		
+		public YPathDesc(String dimName) {
+			_dimName = dimName;
+			_attrNames = new String[0];
+			_attrValues = new String[0];
+		}
+		public YPathDesc( String dimName, String[] attrNames, String[] attrValues) {
+		   _dimName = dimName;
+	       _attrNames = attrNames;
+	       _attrValues = attrValues;
+		}
+		
+		public int numLevels() { return _attrNames.length; }
+
+		public YPathDesc addAttribute( String attrName, String attrValue) {
+			String[] newAttrNames = new String[ _attrNames.length + 1];
+			String[] newAttrValues = new String[ _attrValues.length + 1];
+			for(int i=0; i<_attrNames.length; ++i) {
+			  newAttrNames[i] = _attrNames[i];
+			  newAttrValues[i] = _attrValues[i];
+			}
+			newAttrNames[ _attrNames.length] = attrName;
+			newAttrValues[ _attrNames.length] = attrValue;
+		    return new YPathDesc( _dimName, newAttrNames, newAttrValues);
+		}
+	    
+	    public String toString() {
+	       StringBuilder sb = new StringBuilder("/");	
+	       sb.append( _dimName);
+	       for(int i=0; i<_attrNames.length; ++i) {
+	    	  sb.append('/');
+	    	  sb.append(_attrNames[i]);
+	    	  sb.append('=');
+	    	  sb.append(_attrValues[i]);
+	       }
+	       return sb.toString();
+	    }
+	    
+	}
+	
+	/**
+	 *  For now, just check that number of dimensions doesn't exceed our max.
+	 *  In the future, it could be more complicated logic,
+	 *   like including only certain YPaths together...
+	 *    
+	 * @param xunit
+	 * @return
+	 */
+	public boolean shouldIncludeXUnit(XUnitDesc xunit ) {
+	   return xunit.numDims() <= maxDims;	
+	}
 	
 	private void usage( String mess) throws UDFArgumentException {
 	   LOG.error("Invalid arguments. xunit_explode expects an array of structs containing dimension name and attribute values; " + mess);	
@@ -162,7 +268,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 
 		//// Always process the Global Unit 
 		forwardXUnit(GLOBAL_UNIT );
-		int maxDims = -1;
 		if(maxDimInspector != null) {
 			maxDims = maxDimInspector.get( args[1]);
 		}
@@ -172,21 +277,12 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 
 				Object firstStruct = dimValuesList.get(0);
 				List<Object> otherStructs = dimValuesList.subList( 1, dimValuesList.size() );
-				List<String> allCombos = combinations( firstStruct, otherStructs);
+				List<XUnitDesc> allCombos = combinations( firstStruct, otherStructs);
 
 				totalXUnits += allCombos.size();
 				
-				for( String xunit : allCombos ) {
-					//// Simple pruning logic for now, 
-					//// Somehow don't generate otherwise ...
-					if(maxDims != -1 ) {
-						String[] splitPaths = xunit.split(",");
-						if( splitPaths.length <= maxDims) {
-					      forwardXUnit( xunit);
-						}
-					} else {
-					   forwardXUnit( xunit);
-					}
+				for( XUnitDesc xunit : allCombos ) {
+					   forwardXUnit( xunit.toString());
 				}
 			}
 		} catch(IllegalArgumentException illArg) {
@@ -206,16 +302,12 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	 *  Generate the "per-dimension" portion of the xunit
 	 *  
 	 */
-	private String getDimBase( Object structObj) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("/");
-		sb.append(structInspector.getStructFieldData(structObj,dimField));
-		
-		return sb.toString();
+	private YPathDesc getDimBase( Object structObj) {
+		return new YPathDesc( structInspector.getStructFieldData(structObj,dimField).toString() );
 	}
 	
 	/**
-	 *  Clean out the
+	 *  Clean out any special characters in the string
 	 */
 	private String clean( String attrVal) {
 		String trimVal = attrVal.trim();
@@ -230,7 +322,7 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		return noSlash;
 	}
 
-	private List<String> generateYPaths( Object structObj, int level, List<String> prevLevels) throws IllegalArgumentException {
+	private List<YPathDesc> generateYPaths( Object structObj) throws IllegalArgumentException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("/");
 		
@@ -245,53 +337,46 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 			throw new IllegalArgumentException("Number of atttribute names must equal number of attribute values");
 		}
 	
-		List<String> retVal = new ArrayList<String>();
+		List<YPathDesc> retVal = new ArrayList<YPathDesc>();
+	    List<YPathDesc> prevYPaths = new ArrayList<YPathDesc>();
+	    List<YPathDesc> nextPrevYPaths = new ArrayList<YPathDesc>();
 		
-		String attrValue = attrValueInspector.getPrimitiveJavaObject(valueList.get(level));
-	    String attrName = attrNameInspector.getPrimitiveJavaObject(nameList.get(level));
+		prevYPaths.add( getDimBase(structObj) );
+		for(int i=0; i< nameList.size(); ++i) {
+		   String attrValue = attrValueInspector.getPrimitiveJavaObject(valueList.get(i));
+	       String attrName = attrNameInspector.getPrimitiveJavaObject(nameList.get(i));
 	    
-	    if( attrValue != null) {
-	    	for(String prefix : prevLevels) {
-	    		if(! attrValue.contains("|")) {
+	       if(attrValue != null) {
+	    	  if(! attrValue.contains("|")) {
 	    			String cleanVal = clean( attrValue);
 	    			if(cleanVal != null) {
-	    			   String ypath = prefix + "/" + attrName + "=" + cleanVal;
-	    			   retVal.add(ypath);
+	    				for(YPathDesc prevYPath : prevYPaths) {
+	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, attrValue);
+	    			       retVal.add(newYp);
+	    			       nextPrevYPaths.add(newYp);
+	    				}
 	    			}
-	    		} else{
+	    	  } else{
 				   ///// If we want to emit multiple rows for an xunit, for a particular YPath
 				   ////  (ie. Both Asian and Hispanic ethnicity  )
 	    		  String[] subVals = attrValue.split("\\|");
 	    		  for(String subVal : subVals) {
 	    			  String cleanSubVal = clean( subVal);
 	    			  if( cleanSubVal != null) {
-	    			    String ypath = prefix + "/" + attrName + "=" + cleanSubVal;
-	    			    retVal.add(ypath);
+	    				for(YPathDesc prevYPath : prevYPaths) {
+	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, attrValue);
+	    			       retVal.add(newYp);
+	    			       nextPrevYPaths.add( newYp);
+	    				}
 	    			  }
 	    		  }
 	    		}
 	    	}
+	        prevYPaths = nextPrevYPaths;
 	    }
 	    return retVal;
 	}
 	
-	private List<String> generateAllYPaths( Object structObj) throws IllegalArgumentException {
-		List nameList = (List) structInspector.getStructFieldData(structObj, attrNamesField);
-		List<String> retVals = new ArrayList<String>();
-		List<String> prevLevel= new ArrayList<String>();
-		String dimBase = getDimBase( structObj);
-		if( nameList.size() > 0) {
-		   prevLevel.add( dimBase);
-		   for(int i=0; i<nameList.size(); ++i ) {
-			   List<String> nextLevel = generateYPaths( structObj, i,prevLevel);
-			   if( nextLevel != null) {
-			     retVals.addAll( nextLevel);
-			   }
-			   prevLevel = nextLevel;
-		   }
-		}
-	    return retVals;	
-	}
 	
 	///
 	/// XXX JDB 
@@ -299,26 +384,40 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	///  Later, try to reuse objects .. ( ie common geo or gender units don't need to be rebuilt)
 	////    to reduce garbage collection 
 	//// Also allow to specify some pruning logic
-	private List<String> combinations( Object structObj,  List<Object>  otherDims) {
-		List<String> thisYUnits = generateAllYPaths( structObj);
+	private List<XUnitDesc> combinations( Object structObj,  List<Object>  otherDims) {
+	    List<XUnitDesc> allCombos = new ArrayList<XUnitDesc>();
+		List<YPathDesc> thisYPaths = generateYPaths( structObj);
 		if( otherDims.size() == 0 ) {
-			return thisYUnits;
+		    for( YPathDesc thisYP : thisYPaths) {
+		       XUnitDesc thisXUnit = fromPath( thisYP);
+		       if(shouldIncludeXUnit( thisXUnit)) {
+		         allCombos.add(thisXUnit);
+		       }
+		    }
+			return allCombos;
 		} else {
 			Object nextObj = otherDims.get(0);
 			List<Object> nextList = otherDims.subList(1, otherDims.size());
-		    List<String> otherYUnits = combinations(nextObj, nextList);
+		    List<XUnitDesc> otherXUnits = combinations(nextObj, nextList);
 		    
-		    List<String> allCombos = new ArrayList();
-		    //// XXX XXX 
-		    /// XXX Add ability to specify pruning logic as argument to UDF
-		    allCombos.addAll( thisYUnits);
-		    allCombos.addAll( otherYUnits);
-		    for( String thisYUnit :  thisYUnits ) {
-		        for(String otherYUnit : otherYUnits ) {
-		        	allCombos.add( thisYUnit + "," + otherYUnit);
+		    for( YPathDesc thisYP : thisYPaths) {
+		       XUnitDesc thisXUnit = fromPath( thisYP);
+		       if(shouldIncludeXUnit( thisXUnit)) {
+		          allCombos.add(thisXUnit);
+		       }
+		    }
+
+		    allCombos.addAll( otherXUnits);
+
+		    for( YPathDesc thisYPath :  thisYPaths ) {
+		        for(XUnitDesc otherXUnit : otherXUnits ) {
+		        	XUnitDesc newXUnit = otherXUnit.addYPath(thisYPath);
+		        	if( shouldIncludeXUnit(newXUnit)) {
+		        	   allCombos.add( newXUnit);
+		        	}
 		        }
 		    }
-		    return allCombos;
+	        return allCombos;
 		}
 	}
 

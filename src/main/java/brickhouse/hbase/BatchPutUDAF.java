@@ -151,7 +151,6 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 					
 			} else {
 			  listKVOI = (StandardListObjectInspector) parameters[0];
-				
 			}
 			
 			if( m == Mode.PARTIAL1 || m  == Mode.PARTIAL2) {

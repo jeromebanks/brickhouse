@@ -22,7 +22,13 @@ public class RemoveYPathUDF extends UDF {
 	        	   sb.append(ypath);
 	        	}
 	        }
-	        return sb.toString();	
+	        if( sb.toString().length() > 0) {
+	          return sb.toString();	
+	        } else {
+	        	/// Return the Global Xunit
+	        	/// if we've removed the only YPath in the XUnit
+	        	return "/G";
+	        }
 	    }
 
 }

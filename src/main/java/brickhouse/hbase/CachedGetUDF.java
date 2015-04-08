@@ -54,6 +54,8 @@ public class CachedGetUDF extends GenericUDF {
 	private StringObjectInspector strInspector;
 	private InspectorHandle jsonInspectorHandle;
 	
+	private static final String MAX_SIZE_KEY = "brickhouse.hbase.cache.maxSize";
+	
 	
 
 	@Override
@@ -88,7 +90,6 @@ public class CachedGetUDF extends GenericUDF {
 			}
 			Get keyGet = new Get(key.getBytes());
 			if(configMap == null ) {
-				LOG.info(" Ay Yai Yai !!! ConfigMap is null ");
 				return null;
 			}
 			HTable htable = HTableFactory.getHTable( configMap);
@@ -163,7 +164,14 @@ public class CachedGetUDF extends GenericUDF {
 		this.configMap = HTableFactory.getConfigFromConstMapInspector(parameters[0]);
 		this.strInspector = (StringObjectInspector) parameters[1];
 		
-		this.cache = CacheBuilder.newBuilder().build(valueLoader);
+		//// If each JSON is about 2K, this would be about 100 megs ...
+		////  Alter the setting if you run into OutOfMemory errors...
+		int size = 500000;
+		if(configMap.containsKey( MAX_SIZE_KEY)) {
+			size = Integer.parseInt( configMap.get(MAX_SIZE_KEY));
+		}
+		
+		this.cache = CacheBuilder.newBuilder().maximumSize(size).build(valueLoader);
 		
 		/**
 		 *  If a third parameter is passed in, then 
