@@ -79,16 +79,14 @@ public class HTableFactory {
 			}
 			StandardConstantMapObjectInspector constMapInsp = (StandardConstantMapObjectInspector) objInspector;
 			Map<?,?> uninspMap  =  constMapInsp.getWritableConstantValue();
-			LOG.info( " Uninsp Map = " + uninspMap + " size is " + uninspMap.size());
-			System.out.println( " Uninsp Map = " + uninspMap + " size is " + uninspMap.size());
+			LOG.debug( " Uninsp Map = " + uninspMap + " size is " + uninspMap.size());
 			Map<String,String> configMap = new HashMap<String,String>();
 			for(Object uninspKey : uninspMap.keySet()) {
 				Object uninspVal = uninspMap.get( uninspKey);
 				String key = ((StringObjectInspector)constMapInsp.getMapKeyObjectInspector()).getPrimitiveJavaObject(uninspKey);
 				String val = ((StringObjectInspector)constMapInsp.getMapValueObjectInspector()).getPrimitiveJavaObject(uninspVal);
 						
-				LOG.info(" Key " + key + " VAL = " + val );
-				System.out.println(" Key " + key + " VAL = " + val );
+				LOG.debug(" Key " + key + " VAL = " + val );
 				configMap.put( key, val);
 			}
 			return configMap;
@@ -133,7 +131,7 @@ public class HTableFactory {
 		    case LONG :
 		    	LongObjectInspector longInspector = (LongObjectInspector) objInsp;
 		    	long longVal = longInspector.get( obj);
-		    	LOG.info( " GET BYTE STRING LONG IS " + longVal );
+		    	LOG.debug( " GET BYTE STRING LONG IS " + longVal );
 
 		    	byte[] longBytes = Bytes.toBytes(longVal);
 		    	return (longBytes);
