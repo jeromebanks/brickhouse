@@ -18,28 +18,29 @@ package brickhouse.udf.xunit;
  */
 
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.IllegalFormatException;
 import java.util.List;
 
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDTF;
-import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
+
+import brickhouse.udf.counter.IncrCounterUDF;
 
 /**
  *   Generate XUnits for a set of dimensional values
@@ -69,6 +70,24 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	
 	private IntObjectInspector maxDimInspector = null;
     private int maxDims = -1;
+    
+    private Reporter reporter;
+    
+    private Reporter getReporter() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    	if(reporter == null) {
+    		reporter = IncrCounterUDF.GetReporter();
+    	}
+    	return reporter;
+    }
+    
+    
+    private void incrCounter( String counterName, long counter) {
+       try {
+		 getReporter().incrCounter("XUnitExplode", counterName, counter);
+	   } catch ( Exception exc) {
+		   LOG.error("Error incrementing counter " + counterName, exc);
+	   }	
+    }
 
 	@Override
 	public void close() throws HiveException {
@@ -179,8 +198,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		      fieldOIs);
 	}
 	
-	private int totalXUnits = 0;
-
 	@Override
 	public void process(Object[] args) throws HiveException {
 		List<Object>  dimValuesList = (List<Object>) listInspector.getList(args[0]);
@@ -198,11 +215,11 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 				List<Object> otherStructs = dimValuesList.subList( 1, dimValuesList.size() );
 				List<XUnitDesc> allCombos = combinations( firstStruct, otherStructs);
 
-				totalXUnits += allCombos.size();
 				
 				for( XUnitDesc xunit : allCombos ) {
 					   forwardXUnit( xunit.toString());
 				}
+		        incrCounter("NumXUnits", allCombos.size() );
 			}
 		} catch(IllegalArgumentException illArg) {
 			LOG.error("Error generating XUnits", illArg);
@@ -242,21 +259,18 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	}
 
 	private List<YPathDesc> generateYPaths( Object structObj) throws IllegalArgumentException {
-		StringBuilder sb = new StringBuilder();
-		sb.append("/");
-		
 		List nameList = (List) structInspector.getStructFieldData(structObj, attrNamesField);
 		List valueList = (List) structInspector.getStructFieldData(structObj, attrValuesField);
 		
+		List<YPathDesc> retVal = new ArrayList<YPathDesc>();
 		if( nameList == null || valueList == null) {
-			return null;
+			return retVal;
 		}
 		
 		if(nameList.size() != valueList.size()) {
 			throw new IllegalArgumentException("Number of atttribute names must equal number of attribute values");
 		}
 	
-		List<YPathDesc> retVal = new ArrayList<YPathDesc>();
 	    List<YPathDesc> prevYPaths = new ArrayList<YPathDesc>();
 	    List<YPathDesc> nextPrevYPaths = new ArrayList<YPathDesc>();
 		
@@ -270,7 +284,7 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	    			String cleanVal = clean( attrValue);
 	    			if(cleanVal != null) {
 	    				for(YPathDesc prevYPath : prevYPaths) {
-	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, attrValue);
+	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, cleanVal);
 	    			       retVal.add(newYp);
 	    			       nextPrevYPaths.add(newYp);
 	    				}
@@ -278,12 +292,13 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	    	  } else{
 				   ///// If we want to emit multiple rows for an xunit, for a particular YPath
 				   ////  (ie. Both Asian and Hispanic ethnicity  )
+	    		  //// Assumption is that multiple values will be |-pipe separated ..
 	    		  String[] subVals = attrValue.split("\\|");
 	    		  for(String subVal : subVals) {
 	    			  String cleanSubVal = clean( subVal);
 	    			  if( cleanSubVal != null) {
 	    				for(YPathDesc prevYPath : prevYPaths) {
-	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, attrValue);
+	    			       YPathDesc newYp = prevYPath.addAttribute(attrName, cleanSubVal);
 	    			       retVal.add(newYp);
 	    			       nextPrevYPaths.add( newYp);
 	    				}
@@ -297,13 +312,6 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	    return retVal;
 	}
 	
-	
-	///
-	/// XXX JDB 
-	/// For now, do brute force recursive method 
-	///  Later, try to reuse objects .. ( ie common geo or gender units don't need to be rebuilt)
-	////    to reduce garbage collection 
-	//// Also allow to specify some pruning logic
 	private List<XUnitDesc> combinations( Object structObj,  List<Object>  otherDims) {
 	    List<XUnitDesc> allCombos = new ArrayList<XUnitDesc>();
 		List<YPathDesc> thisYPaths = generateYPaths( structObj);

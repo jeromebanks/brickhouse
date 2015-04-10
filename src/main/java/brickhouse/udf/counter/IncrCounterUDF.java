@@ -69,17 +69,21 @@ public class IncrCounterUDF extends UDF {
 	 * @throws IllegalArgumentException 
 	 * @throws IllegalAccessException 
 	 */
-	private Reporter getReporter() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-	  if(reporter == null) {
-	      Class clazz = Class.forName("org.apache.hadoop.hive.ql.exec.MapredContext");
-	      Method staticGetMethod = clazz.getMethod("get");
-	      Object mapredObj = staticGetMethod.invoke(null);
-	      Class mapredClazz = mapredObj.getClass();
-	      Method getReporter = mapredClazz.getMethod("getReporter");
-	      Object reporterObj=  getReporter.invoke( mapredObj);
+	public Reporter getReporter() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+	   if(reporter == null) {
+		  reporter = GetReporter();
+	   }
+	   return reporter;
+	}
 
-	      reporter = (Reporter)reporterObj;
-	  }
-	  return reporter;
+	public static Reporter GetReporter() throws ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+	  Class clazz = Class.forName("org.apache.hadoop.hive.ql.exec.MapredContext");
+	  Method staticGetMethod = clazz.getMethod("get");
+	  Object mapredObj = staticGetMethod.invoke(null);
+	  Class mapredClazz = mapredObj.getClass();
+	  Method getReporter = mapredClazz.getMethod("getReporter");
+	  Object reporterObj=  getReporter.invoke( mapredObj);
+
+	  return (Reporter)reporterObj;
 	}
 }
