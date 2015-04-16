@@ -101,19 +101,17 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 
         public class PutBuffer implements AggregationBuffer{
 			public List<Put> putList;
-			public boolean writeToWAL = true;
 
-			public PutBuffer(boolean walFlag) {
-			   writeToWAL = walFlag;
+			public PutBuffer() {
 			}
 
 			public void reset() { putList = new ArrayList<Put>(); }
 
 			public void addKeyValue( byte[] key, byte[] val) throws HiveException{
-                         Put thePut = new Put(key);
-                          //Disable WAL writes when specified in config map
-                                if(disableWAL)
-                    thePut.setDurability(Durability.SKIP_WAL);
+                Put thePut = new Put(key);
+                //Disable WAL writes when specified in config map
+                if(disableWAL)
+                  thePut.setDurability(Durability.SKIP_WAL);
 
                 thePut.add( getFamily(), getQualifier(), val);
 				putList.add( thePut);
@@ -151,6 +149,7 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 		private StandardListObjectInspector listKVOI;
 		private Map<String,String> configMap;
 		
+		private HTable table;
 
 
 		public ObjectInspector init(Mode m, ObjectInspector[] parameters)
