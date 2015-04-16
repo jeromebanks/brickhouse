@@ -100,14 +100,19 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 
         public class PutBuffer implements AggregationBuffer{
 			public List<Put> putList;
+			public boolean writeToWAL = true;
 
-			public PutBuffer() {
+			public PutBuffer(boolean walFlag) {
+			   writeToWAL = walFlag;
 			}
 
 			public void reset() { putList = new ArrayList<Put>(); }
 
 			public void addKeyValue( byte[] key, byte[] val) throws HiveException{
 				Put thePut = new Put(key);
+				thePut.setWriteToWAL( writeToWAL);
+				thePut.setDurability( null);
+
 				thePut.add( getFamily(), getQualifier(), val);
 				putList.add( thePut);
 			}

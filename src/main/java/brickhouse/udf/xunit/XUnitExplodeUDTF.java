@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.BooleanObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
@@ -50,7 +51,7 @@ import brickhouse.udf.counter.IncrCounterUDF;
  */
 @Description(
 		name="xunit_explode", 
-		value="_FUNC_(array<struct<dim:string,attr_names:array<string>,attr_values:array<string>>) - ",
+		value="_FUNC_(array<struct<dim:string,attr_names:array<string>,attr_values:array<string>>, int, boolean) - ",
 		extended="SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
 public class XUnitExplodeUDTF extends GenericUDTF {
 	private static final Logger LOG = Logger.getLogger( XUnitExplodeUDTF.class);
@@ -70,6 +71,8 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	
 	private IntObjectInspector maxDimInspector = null;
     private int maxDims = -1;
+    
+    private BooleanObjectInspector globalFlagInspector;
     
     private Reporter reporter;
     
@@ -128,8 +131,8 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	public StructObjectInspector initialize(ObjectInspector[] objInspectorArr)
 			throws UDFArgumentException {
 		//// Need to make sure that it is our array of structs inspector 
-		if(objInspectorArr.length > 2 ) {
-		    usage(" Only one or two arguments");
+		if(objInspectorArr.length > 3 ) {
+		    usage(" Only one,two or three arguments");
 		}
 		ObjectInspector objInsp = objInspectorArr[0];
 		if(objInsp.getCategory() != Category.LIST) {
@@ -187,6 +190,14 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 		attrValueInspector = (StringObjectInspector) attrValuesInspector.getListElementObjectInspector();
 		
 		
+		if(objInspectorArr.length > 2) {
+		   if(objInspectorArr[2].getCategory() != Category.PRIMITIVE
+				   || (((PrimitiveObjectInspector)objInspectorArr[2]).getPrimitiveCategory() != PrimitiveCategory.BOOLEAN)) {
+			   usage(" Explode Global flag must be a boolean");
+		   }
+		   globalFlagInspector = (BooleanObjectInspector) objInspectorArr[2];
+		}
+		
 		/// We return a struct with one field, 'xunit'
 		
 		ArrayList<String> fieldNames = new ArrayList<String>();
@@ -202,8 +213,15 @@ public class XUnitExplodeUDTF extends GenericUDTF {
 	public void process(Object[] args) throws HiveException {
 		List<Object>  dimValuesList = (List<Object>) listInspector.getList(args[0]);
 
-		//// Always process the Global Unit 
-		forwardXUnit(GLOBAL_UNIT );
+		if( globalFlagInspector != null ) {
+			boolean globalFlag = globalFlagInspector.get( args[2]);
+			if(globalFlag) {
+		      forwardXUnit(GLOBAL_UNIT );
+			}
+		} else {
+		  forwardXUnit(GLOBAL_UNIT );
+		}
+
 		if(maxDimInspector != null) {
 			maxDims = maxDimInspector.get( args[1]);
 		}
