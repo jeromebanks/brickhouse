@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -109,11 +110,12 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			public void reset() { putList = new ArrayList<Put>(); }
 
 			public void addKeyValue( byte[] key, byte[] val) throws HiveException{
-				Put thePut = new Put(key);
-				thePut.setWriteToWAL( writeToWAL);
-				thePut.setDurability( null);
+                         Put thePut = new Put(key);
+                          //Disable WAL writes when specified in config map
+                                if(disableWAL)
+                    thePut.setDurability(Durability.SKIP_WAL);
 
-				thePut.add( getFamily(), getQualifier(), val);
+                thePut.add( getFamily(), getQualifier(), val);
 				putList.add( thePut);
 			}
 		}
@@ -132,8 +134,14 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 
 		private int batchSize = 10000;
 		private int numPutRecords = 0;
+        private boolean disableWAL = false;
+        private boolean disableAutoFlush = false;
+        private int writeBufferSizeBytes = 0;
 		
 		public static final String BATCH_SIZE_TAG = "batch_size";
+        public static final String DISABLE_WAL = "disable_wal";
+        public static final String DISABLE_AUTO_FLUSH = "disable_auto_flush";
+        public static final String WRITE_BUFFER_SIZE_MB = "write_buffer_size_mb";
 		
 		// For PARTIAL1 and COMPLETE: ObjectInspectors for original data
 		private PrimitiveObjectInspector inputKeyOI;
@@ -167,8 +175,31 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 				inputKeyOI = (PrimitiveObjectInspector) parameters[1];
 				inputValOI = (PrimitiveObjectInspector) parameters[2];
 				
-				if(configMap.containsKey(BATCH_SIZE_TAG)) {
-					batchSize = Integer.parseInt( configMap.get( BATCH_SIZE_TAG));
+				
+				try {
+					LOG.info(" Initializing HTable ");
+					table = HTableFactory.getHTable( configMap);
+					
+					if(configMap.containsKey(BATCH_SIZE_TAG)) {
+						batchSize = Integer.parseInt( configMap.get( BATCH_SIZE_TAG));
+					}
+
+                    if(configMap.containsKey(DISABLE_AUTO_FLUSH)) {
+                        disableAutoFlush = Boolean.valueOf( configMap.get( DISABLE_AUTO_FLUSH));
+                        LOG.info("Disabling auto flush on hbase puts");
+                    }
+
+                    if(configMap.containsKey(DISABLE_WAL)) {
+                        disableWAL = Boolean.valueOf( configMap.get( DISABLE_WAL));
+                        LOG.info("Disabling WAL writes on hbase puts");
+                    }
+
+                    if(configMap.containsKey(WRITE_BUFFER_SIZE_MB)) {
+                        writeBufferSizeBytes = Integer.parseInt( configMap.get( WRITE_BUFFER_SIZE_MB)) * 1024 * 1024;
+                        LOG.info("Setting habase write buffer size to: " + writeBufferSizeBytes);
+                    }
+				} catch (IOException e) {
+					throw new HiveException(e);
 				}
 					
 			} else {
@@ -220,7 +251,14 @@ public class BatchPutUDAF extends AbstractGenericUDAFResolver {
 			try {
 				
 				HTable htable = HTableFactory.getHTable(configMap);
-				
+				// Disable auto flush when specified so in the config map
+                if(disableAutoFlush)
+				    htable.setAutoFlushTo(false);
+
+                // Overwrite the write buffer size when config map specifies to do so
+                if(writeBufferSizeBytes > 0)
+                    htable.setWriteBufferSize(writeBufferSizeBytes);
+
 				htable.put( kvBuff.putList);
 				if(flushCommits) 
 				   htable.flushCommits();
