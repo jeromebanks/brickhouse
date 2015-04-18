@@ -14,7 +14,7 @@ package brickhouse.udf.collect;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-**/
+ **/
 
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -30,47 +30,46 @@ import java.util.TreeMap;
 
 /**
  * Cast an Map to the string to string map
- *
+ * <p/>
  * Based on CastArrayUDF.
- *
  */
 public class CastMapUDF extends GenericUDF {
-  private static final Logger LOG = Logger.getLogger(CastMapUDF.class);
-  private MapObjectInspector mapInspector;
+    private static final Logger LOG = Logger.getLogger(CastMapUDF.class);
+    private MapObjectInspector mapInspector;
 
 
-  public Map<String, String> evaluate(Map<Object, Object> strMap) {
-    Map<String, String> newMap = new TreeMap<String, String>();
-    for(Object keyObj : strMap.keySet() ) {
-      newMap.put(keyObj.toString(), strMap.get(keyObj).toString());
+    public Map<String, String> evaluate(Map<Object, Object> strMap) {
+        Map<String, String> newMap = new TreeMap<String, String>();
+        for (Object keyObj : strMap.keySet()) {
+            newMap.put(keyObj.toString(), strMap.get(keyObj).toString());
+        }
+        return newMap;
     }
-    return newMap;
-  }
 
-  @Override
-  public Map<String, String> evaluate(DeferredObject[] arg0) throws HiveException {
-    Map argMap = mapInspector.getMap(arg0[0].get());
-    if(argMap != null)
-      return evaluate(argMap);
-    else
-      return null;
-  }
+    @Override
+    public Map<String, String> evaluate(DeferredObject[] arg0) throws HiveException {
+        Map argMap = mapInspector.getMap(arg0[0].get());
+        if (argMap != null)
+            return evaluate(argMap);
+        else
+            return null;
+    }
 
-  @Override
-  public String getDisplayString(String[] arg0) {
-    return "cast_map()";
-  }
+    @Override
+    public String getDisplayString(String[] arg0) {
+        return "cast_map()";
+    }
 
-  @Override
-  public ObjectInspector initialize(ObjectInspector[] arg0)
-      throws UDFArgumentException {
-    this.mapInspector = (MapObjectInspector) arg0[0];
-    LOG.info( " Cast Map input type is " + mapInspector +
-        " key = " + mapInspector.getMapKeyObjectInspector().getTypeName() +
-        " value = " + mapInspector.getMapValueObjectInspector().getTypeName());
-    ObjectInspector returnType = ObjectInspectorFactory.getStandardMapObjectInspector(
-        PrimitiveObjectInspectorFactory.javaStringObjectInspector,
-        PrimitiveObjectInspectorFactory.javaStringObjectInspector);
-    return returnType;
-  }
+    @Override
+    public ObjectInspector initialize(ObjectInspector[] arg0)
+            throws UDFArgumentException {
+        this.mapInspector = (MapObjectInspector) arg0[0];
+        LOG.info(" Cast Map input type is " + mapInspector +
+                " key = " + mapInspector.getMapKeyObjectInspector().getTypeName() +
+                " value = " + mapInspector.getMapValueObjectInspector().getTypeName());
+        ObjectInspector returnType = ObjectInspectorFactory.getStandardMapObjectInspector(
+                PrimitiveObjectInspectorFactory.javaStringObjectInspector,
+                PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+        return returnType;
+    }
 }

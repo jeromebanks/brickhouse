@@ -31,123 +31,122 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.log4j.Logger;
 
 /**
- *   Aggregate multiple HyerLogLog structures together.
- *
+ * Aggregate multiple HyerLogLog structures together.
  */
 
-@Description(name="union_hyperloglog",
-    value = "_FUNC_(x) - Merges multiple hyperloglogs together. "
+@Description(name = "union_hyperloglog",
+        value = "_FUNC_(x) - Merges multiple hyperloglogs together. "
 )
 public class UnionHyperLogLogUDAF extends AbstractGenericUDAFResolver {
-  private static final Logger LOG = Logger.getLogger(UnionHyperLogLogUDAF.class);
-
-  @Override
-  public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
-      throws SemanticException {
-    if (parameters.length != 1) {
-      throw new UDFArgumentTypeException(parameters.length - 1,
-          "Please specify one argument.");
-    }
-    
-    if (parameters[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
-      throw new UDFArgumentTypeException(0,
-          "Only primitive type arguments are accepted but "
-              + parameters[0].getTypeName()
-              + " was passed as parameter 1.");
-    }
-    
-    if (((PrimitiveTypeInfo) parameters[0]).getPrimitiveCategory() != PrimitiveObjectInspector.PrimitiveCategory.BINARY) {
-      throw new UDFArgumentTypeException(0,
-          "Only a binary argument is accepted as parameter 1, but "
-              + parameters[0].getTypeName()
-              + " was passed instead.");
-    }
-    
-    if (parameters.length > 1) throw new IllegalArgumentException("Function only takes 1 parameter.");
-
-    return new MergeHyperLogLogUDAFEvaluator();
-  }
-
-  public static class MergeHyperLogLogUDAFEvaluator extends GenericUDAFEvaluator {
-    // For PARTIAL1 and COMPLETE: ObjectInspectors for original data
- // For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (binary serialized hll object)
-	  private BinaryObjectInspector inputAndPartialBinaryOI;
-
-    public ObjectInspector init(Mode m, ObjectInspector[] parameters)
-        throws HiveException {
-      super.init(m, parameters);
-      
-      LOG.debug(" MergeHyperLogLogUDAF.init() - Mode= " + m.name() );
-      
-      // init input object inspectors
-    	this.inputAndPartialBinaryOI = (BinaryObjectInspector) parameters[0];
-      
-    	// init output object inspectors
-      // The partial aggregate type is the same as the final type
-    	return PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
-    }
+    private static final Logger LOG = Logger.getLogger(UnionHyperLogLogUDAF.class);
 
     @Override
-    public AggregationBuffer getNewAggregationBuffer() throws HiveException {
-      HLLBuffer buff= new HLLBuffer();
-      reset(buff);
-      return buff;
+    public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters)
+            throws SemanticException {
+        if (parameters.length != 1) {
+            throw new UDFArgumentTypeException(parameters.length - 1,
+                    "Please specify one argument.");
+        }
+
+        if (parameters[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
+            throw new UDFArgumentTypeException(0,
+                    "Only primitive type arguments are accepted but "
+                            + parameters[0].getTypeName()
+                            + " was passed as parameter 1.");
+        }
+
+        if (((PrimitiveTypeInfo) parameters[0]).getPrimitiveCategory() != PrimitiveObjectInspector.PrimitiveCategory.BINARY) {
+            throw new UDFArgumentTypeException(0,
+                    "Only a binary argument is accepted as parameter 1, but "
+                            + parameters[0].getTypeName()
+                            + " was passed instead.");
+        }
+
+        if (parameters.length > 1) throw new IllegalArgumentException("Function only takes 1 parameter.");
+
+        return new MergeHyperLogLogUDAFEvaluator();
     }
 
-    @Override
-    public void iterate(AggregationBuffer agg, Object[] parameters)
-    		throws HiveException {
-    	try {
-    	  
-    	  if (parameters[0] == null) {
-    	    return;
-    	  }
-    	  
-    		Object partial = parameters[0];
-    		merge(agg, partial);
-    	} catch(Exception e) {
-    		LOG.error("Error",e);
-    		throw new HiveException(e);
-    	}
-    }
+    public static class MergeHyperLogLogUDAFEvaluator extends GenericUDAFEvaluator {
+        // For PARTIAL1 and COMPLETE: ObjectInspectors for original data
+        // For PARTIAL2 and FINAL: ObjectInspectors for partial aggregations (binary serialized hll object)
+        private BinaryObjectInspector inputAndPartialBinaryOI;
 
-    @Override
-    public void merge(AggregationBuffer agg, Object partial)
-        throws HiveException {
-      if (partial == null) {
-        return;
-      }
-      
-    	try {
-    	  HLLBuffer myagg = (HLLBuffer) agg;
-        byte[] partialBuffer = this.inputAndPartialBinaryOI.getPrimitiveJavaObject(partial);
-        myagg.merge(partialBuffer);
-    	} catch(Exception e) {
-    		LOG.error("Error",e);
-    		throw new HiveException(e);
-    	}
-    }
+        public ObjectInspector init(Mode m, ObjectInspector[] parameters)
+                throws HiveException {
+            super.init(m, parameters);
 
-    @Override
-    public void reset(AggregationBuffer buff) throws HiveException {
-      HLLBuffer hllBuff = (HLLBuffer) buff;
-      hllBuff.reset();
-    }
+            LOG.debug(" MergeHyperLogLogUDAF.init() - Mode= " + m.name());
 
-    @Override
-    public Object terminate(AggregationBuffer agg) throws HiveException {
-    	try {
-    		HLLBuffer myagg = (HLLBuffer) agg;
-    		return myagg.getPartial();
-    	} catch(Exception e) {
-    		LOG.error("Error",e);
-    		throw new HiveException(e);
-    	}
-    }
+            // init input object inspectors
+            this.inputAndPartialBinaryOI = (BinaryObjectInspector) parameters[0];
 
-    @Override
-    public Object terminatePartial(AggregationBuffer agg) throws HiveException {
-    	return terminate(agg);
+            // init output object inspectors
+            // The partial aggregate type is the same as the final type
+            return PrimitiveObjectInspectorFactory.javaByteArrayObjectInspector;
+        }
+
+        @Override
+        public AggregationBuffer getNewAggregationBuffer() throws HiveException {
+            HLLBuffer buff = new HLLBuffer();
+            reset(buff);
+            return buff;
+        }
+
+        @Override
+        public void iterate(AggregationBuffer agg, Object[] parameters)
+                throws HiveException {
+            try {
+
+                if (parameters[0] == null) {
+                    return;
+                }
+
+                Object partial = parameters[0];
+                merge(agg, partial);
+            } catch (Exception e) {
+                LOG.error("Error", e);
+                throw new HiveException(e);
+            }
+        }
+
+        @Override
+        public void merge(AggregationBuffer agg, Object partial)
+                throws HiveException {
+            if (partial == null) {
+                return;
+            }
+
+            try {
+                HLLBuffer myagg = (HLLBuffer) agg;
+                byte[] partialBuffer = this.inputAndPartialBinaryOI.getPrimitiveJavaObject(partial);
+                myagg.merge(partialBuffer);
+            } catch (Exception e) {
+                LOG.error("Error", e);
+                throw new HiveException(e);
+            }
+        }
+
+        @Override
+        public void reset(AggregationBuffer buff) throws HiveException {
+            HLLBuffer hllBuff = (HLLBuffer) buff;
+            hllBuff.reset();
+        }
+
+        @Override
+        public Object terminate(AggregationBuffer agg) throws HiveException {
+            try {
+                HLLBuffer myagg = (HLLBuffer) agg;
+                return myagg.getPartial();
+            } catch (Exception e) {
+                LOG.error("Error", e);
+                throw new HiveException(e);
+            }
+        }
+
+        @Override
+        public Object terminatePartial(AggregationBuffer agg) throws HiveException {
+            return terminate(agg);
+        }
     }
-  }
 }

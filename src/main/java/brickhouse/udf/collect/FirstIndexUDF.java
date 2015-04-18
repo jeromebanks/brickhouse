@@ -16,8 +16,6 @@ package brickhouse.udf.collect;
  *
  **/
 
-import java.util.List;
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -25,51 +23,46 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 
 
 /**
- *  Return the first element in an array.
- *
+ * Return the first element in an array.
  */
-@Description(name="first_index",
-value = "_FUNC_(x) - Last value in an array " 
+@Description(name = "first_index",
+        value = "_FUNC_(x) - Last value in an array "
 )
 public class FirstIndexUDF extends GenericUDF {
-	private ListObjectInspector listInspector;
-	
+    private ListObjectInspector listInspector;
 
-	@Override
-	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-		Object list =  arg0[0].get();
-		if(listInspector.getListLength(list) > 0) {
-		    Object unInsp =  listInspector.getListElement(list, 0);
-		    return unInsp;
-		} else{
-			return null;
-		}
-	}
 
-	@Override
-	public String getDisplayString(String[] arg0) {
-		return "first_index( " + arg0[0] + " )";
-	}
+    @Override
+    public Object evaluate(DeferredObject[] arg0) throws HiveException {
+        Object list = arg0[0].get();
+        if (listInspector.getListLength(list) > 0) {
+            Object unInsp = listInspector.getListElement(list, 0);
+            return unInsp;
+        } else {
+            return null;
+        }
+    }
 
-	@Override
-	public ObjectInspector initialize(ObjectInspector[] arg0)
-			throws UDFArgumentException {
-		if( arg0.length != 1) {
-			throw new UDFArgumentException("first_index takes an array as an argument.");
-		}
-		if( arg0[0].getCategory() != Category.LIST ) {
-			throw new UDFArgumentException("first_index takes an array as an argument.");
-		}
-		listInspector = (ListObjectInspector) arg0[0];
-		
-		return  listInspector.getListElementObjectInspector();
-	}
+    @Override
+    public String getDisplayString(String[] arg0) {
+        return "first_index( " + arg0[0] + " )";
+    }
+
+    @Override
+    public ObjectInspector initialize(ObjectInspector[] arg0)
+            throws UDFArgumentException {
+        if (arg0.length != 1) {
+            throw new UDFArgumentException("first_index takes an array as an argument.");
+        }
+        if (arg0[0].getCategory() != Category.LIST) {
+            throw new UDFArgumentException("first_index takes an array as an argument.");
+        }
+        listInspector = (ListObjectInspector) arg0[0];
+
+        return listInspector.getListElementObjectInspector();
+    }
 
 }

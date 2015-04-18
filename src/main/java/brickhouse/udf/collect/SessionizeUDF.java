@@ -20,46 +20,48 @@ package brickhouse.udf.collect;
 /**
  * Creates a session id for an index and a time stamp. Default session length is 30 minute = 1800000 milliseconds
  */
-import java.util.UUID;
 
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 
+import java.util.UUID;
+
 @Description(
-		name="sessionize", 
-		value="_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
-		extended="SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
+        name = "sessionize",
+        value = "_FUNC_(string, timestamp) - Returns a session id for the given id and ts(long). Optional third parameter to specify interval tolerance in milliseconds",
+        extended = "SELECT _FUNC_(uid, ts), uid, ts, event_type from foo;")
 
 public class SessionizeUDF extends UDF {
-		private String lastUid = null;
-		private long lastTS = 0;
-		private String lastUUID = null;
+    private String lastUid = null;
+    private long lastTS = 0;
+    private String lastUUID = null;
 
-	  
-	  public String evaluate(String uid, long ts, int tolerance) {
-		  if (uid.equals(lastUid) && timeStampCompare(lastTS, ts, tolerance)) { 
-			  lastTS = ts;			  
-		  } else if (uid.equals(lastUid)) {
-			  lastTS = ts;
-			  lastUUID=UUID.randomUUID().toString();
-			  
-		  } else {
-			  lastUid = uid;
-			  lastTS = ts;
-			  lastUUID=UUID.randomUUID().toString();
-		  }
-		  return lastUUID;
-	  }
-	  public String evaluate(String uid,  long ts) { 
-		 return evaluate(uid, ts, 1800000);
-	  }
-	  
-	  private Boolean timeStampCompare(long lastTS, long ts, int ms) { 
-		  try {
-			  long difference = ts - lastTS;
-			  return (Math.abs((int)difference) < ms) ? true : false;
-		  } catch (ArithmeticException e) {
-			  return false;
-		  }
-	  }
-	}
+
+    public String evaluate(String uid, long ts, int tolerance) {
+        if (uid.equals(lastUid) && timeStampCompare(lastTS, ts, tolerance)) {
+            lastTS = ts;
+        } else if (uid.equals(lastUid)) {
+            lastTS = ts;
+            lastUUID = UUID.randomUUID().toString();
+
+        } else {
+            lastUid = uid;
+            lastTS = ts;
+            lastUUID = UUID.randomUUID().toString();
+        }
+        return lastUUID;
+    }
+
+    public String evaluate(String uid, long ts) {
+        return evaluate(uid, ts, 1800000);
+    }
+
+    private Boolean timeStampCompare(long lastTS, long ts, int ms) {
+        try {
+            long difference = ts - lastTS;
+            return (Math.abs((int) difference) < ms) ? true : false;
+        } catch (ArithmeticException e) {
+            return false;
+        }
+    }
+}

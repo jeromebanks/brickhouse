@@ -2,18 +2,18 @@ package brickhouse.udf.collect;
 
 /**
  * This code is public domain.
- * 
+ *
  * MurmurHash3 was written by Austin Appleby and put into the
  * public domain. The author hereby disclaims copyright to this
  * source code. See http://code.google.com/p/smhasher
- * 
+ *
  * The java port for MurmurHash3 found here was authored by
  * Yonik Seeley and was placed into the public domain per
  * https://github.com/yonik/java_util/blob/master/src/util/hash/MurmurHash3.java
- * 
+ *
  * This MurmurHash3 Hive UDF was authored by Vangie Shue
  * and is placed in the public domain.
- * 
+ *
  **/
 
 import org.apache.hadoop.hive.ql.exec.UDF;
@@ -26,8 +26,8 @@ import org.apache.hadoop.io.Text;
  * Offset is set to 0.
  */
 
-public class MurmurHash3UDF extends UDF{
-    
+public class MurmurHash3UDF extends UDF {
+
     public Integer evaluate(Text input) {
         if (input == null) {
             return null;
@@ -43,19 +43,19 @@ public class MurmurHash3UDF extends UDF{
 
         return hash_str(input.toString(), seed.get());
     }
-    
+
     private static int hash_str(String item) {
         // Offset: 0
         // Seed: 1
         return mhash(item.getBytes(), 0, item.length(), 1);
     }
-    
+
     private static int hash_str(String item, int seed) {
         // Offset: 0
         return mhash(item.getBytes(), 0, item.length(), seed);
     }
-    
-        private static int mhash(byte[] data, int offset, int len, int seed) {
+
+    private static int mhash(byte[] data, int offset, int len, int seed) {
 
         int c1 = 0xcc9e2d51;
         int c2 = 0x1b873593;
@@ -81,10 +81,10 @@ public class MurmurHash3UDF extends UDF{
         switch (len & 0x03) {
             case 3:
                 k1 = (data[roundedEnd + 2] & 0xff) << 16;
-            // fallthrough
+                // fallthrough
             case 2:
                 k1 |= (data[roundedEnd + 1] & 0xff) << 8;
-            // fallthrough
+                // fallthrough
             case 1:
                 k1 |= data[roundedEnd] & 0xff;
                 k1 *= c1;

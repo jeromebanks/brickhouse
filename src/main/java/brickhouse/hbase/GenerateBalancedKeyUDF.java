@@ -20,26 +20,25 @@ import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 
 /**
- *  Generate an HBase Key for a string, which
- *    should be evenly balanced across N regions.
- *
+ * Generate an HBase Key for a string, which
+ * should be evenly balanced across N regions.
  */
-@Description(name="hbase_balanced_key",
-value = "_FUNC_(keyStr,numRegions) - Returns an HBase key balanced evenly across regions" 
+@Description(name = "hbase_balanced_key",
+        value = "_FUNC_(keyStr,numRegions) - Returns an HBase key balanced evenly across regions"
 )
 public class GenerateBalancedKeyUDF extends UDF {
 
-	public String evaluate( String keyStr, int numRegions ) {
-		int sumChars = 0;
-		for(int i=0; i<keyStr.length(); ++i) {
-			sumChars += (int)keyStr.charAt(i);
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append( Integer.toHexString(sumChars % numRegions).toUpperCase());
-		sb.append(':');
-		sb.append(keyStr);
-		
-		return sb.toString();
-	}
+    public String evaluate(String keyStr, int numRegions) {
+        int sumChars = 0;
+        for (int i = 0; i < keyStr.length(); ++i) {
+            sumChars += (int) keyStr.charAt(i);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(Integer.toHexString(sumChars % numRegions).toUpperCase());
+        sb.append(':');
+        sb.append(keyStr);
+
+        return sb.toString();
+    }
 }

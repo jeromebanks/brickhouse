@@ -17,68 +17,67 @@ package brickhouse.udf.hll;
  *
  **/
 
-import java.io.IOException;
-
-import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator.AggregationBuffer;
-import org.apache.log4j.Logger;
-
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.cardinality.ICardinality;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator.AggregationBuffer;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
 
 public class HLLBuffer implements AggregationBuffer {
-  private static final Logger LOG = Logger.getLogger(HLLBuffer.class);
-  private ICardinality hll;
-  private int precision;
-  
-  public HLLBuffer() {
-    hll = null;
-    precision = 0;
-  }
-  
-  public boolean isReady() {
-    return precision != 0;
-  }
+    private static final Logger LOG = Logger.getLogger(HLLBuffer.class);
+    private ICardinality hll;
+    private int precision;
 
-  public void init(int precision) {
-    this.precision = precision;
-    hll = new HyperLogLogPlus(precision);
-  }
-
-  public void reset() {
-    hll = null;
-    precision = 0;
-  }
-
-  public void addItem(String str) {
-    hll.offer(str);
-  }
-
-  public void merge(byte[] buffer) throws IOException,
-      CardinalityMergeException {
-    if (buffer == null) {
-      return;
+    public HLLBuffer() {
+        hll = null;
+        precision = 0;
     }
-    
-    ICardinality other = HyperLogLogPlus.Builder.build(buffer);
-    
-    // if hll estimator hasn't been allocated yet, just set it equal to the partial 
-    if (hll == null) {
-      LOG.debug("hll is null; other.sizeof = " + other.sizeof());
-      hll = other;
-      precision = (int) Math.ceil(Math.log(other.sizeof())/Math.log(2.0));
-      LOG.debug("precision set to: " + precision);
-    } else {
-      hll.merge(other);
-    }
-  }
 
-  public byte[] getPartial() throws IOException {
-    if (hll == null) {
-      return null;
+    public boolean isReady() {
+        return precision != 0;
     }
-    
-    return hll.getBytes();
-  }
+
+    public void init(int precision) {
+        this.precision = precision;
+        hll = new HyperLogLogPlus(precision);
+    }
+
+    public void reset() {
+        hll = null;
+        precision = 0;
+    }
+
+    public void addItem(String str) {
+        hll.offer(str);
+    }
+
+    public void merge(byte[] buffer) throws IOException,
+            CardinalityMergeException {
+        if (buffer == null) {
+            return;
+        }
+
+        ICardinality other = HyperLogLogPlus.Builder.build(buffer);
+
+        // if hll estimator hasn't been allocated yet, just set it equal to the partial
+        if (hll == null) {
+            LOG.debug("hll is null; other.sizeof = " + other.sizeof());
+            hll = other;
+            precision = (int) Math.ceil(Math.log(other.sizeof()) / Math.log(2.0));
+            LOG.debug("precision set to: " + precision);
+        } else {
+            hll.merge(other);
+        }
+    }
+
+    public byte[] getPartial() throws IOException {
+        if (hll == null) {
+            return null;
+        }
+
+        return hll.getBytes();
+    }
 
 }

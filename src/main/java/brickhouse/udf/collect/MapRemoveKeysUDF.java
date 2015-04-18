@@ -17,14 +17,6 @@ package brickhouse.udf.collect;
  **/
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Collections;
-import java.util.Set;
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -37,71 +29,76 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 
 /**
  * Return a map minus key value pairs from a map, for a given set of keys.
  *
- * @author otistamp 
- *
+ * @author otistamp
  */
 
-@Description(name="map_remove_keys",
-value = "_FUNC_(map, key_array) - Returns the sorted entries of a map minus key value pairs, the for a given set of keys "
+@Description(name = "map_remove_keys",
+        value = "_FUNC_(map, key_array) - Returns the sorted entries of a map minus key value pairs, the for a given set of keys "
 )
 public class MapRemoveKeysUDF extends GenericUDF {
     private MapObjectInspector mapInspector;
     private StandardMapObjectInspector retValInspector;
     private ListObjectInspector keyListInspector;
-    
-    private Map stdKeys( Map inspectMap) {
+
+    private Map stdKeys(Map inspectMap) {
         Map objMap = new HashMap();
-        for( Object inspKey: inspectMap.keySet() )   {
-            
-            Object objKey= ((PrimitiveObjectInspector) mapInspector.getMapKeyObjectInspector()).getPrimitiveJavaObject(inspKey);
-            objMap.put( objKey, inspKey);
-            
+        for (Object inspKey : inspectMap.keySet()) {
+
+            Object objKey = ((PrimitiveObjectInspector) mapInspector.getMapKeyObjectInspector()).getPrimitiveJavaObject(inspKey);
+            objMap.put(objKey, inspKey);
+
         }
         return objMap;
     }
-    
-    
-    
-    private List inspectList( List inspectList) {
+
+
+    private List inspectList(List inspectList) {
         List objList = new ArrayList();
-        for( Object inspKey: inspectList )   {
-            
-            Object objKey= ((PrimitiveObjectInspector) keyListInspector.getListElementObjectInspector()).getPrimitiveJavaObject(inspKey);
-            
-            objList.add( objKey);
-            
+        for (Object inspKey : inspectList) {
+
+            Object objKey = ((PrimitiveObjectInspector) keyListInspector.getListElementObjectInspector()).getPrimitiveJavaObject(inspKey);
+
+            objList.add(objKey);
+
         }
         return objList;
     }
-    
+
 
     @Override
     public Object evaluate(DeferredObject[] arg0) throws HiveException {
-        Map hiveMap = mapInspector.getMap(arg0[0].get()  );
-        
-        List keyValues = inspectList(keyListInspector.getList(arg0[1].get() ) );
+        Map hiveMap = mapInspector.getMap(arg0[0].get());
+
+        List keyValues = inspectList(keyListInspector.getList(arg0[1].get()));
 
         /// Convert all the keys to standard keys
         Map stdKeys = stdKeys(hiveMap);
-        
+
         Set stdKeySet = stdKeys.keySet();
         List stdKeyList = new ArrayList(stdKeySet);
 
-        Map retVal = (Map)retValInspector.create();
+        Map retVal = (Map) retValInspector.create();
         TreeMap retValSorted = new TreeMap(retVal);
-        for( Object keyObj :stdKeyList ) {
-            if( !keyValues.contains( keyObj )) {
-                Object hiveKey = stdKeys.get( keyObj);
-                Object hiveVal = hiveMap.get( hiveKey);
-                Object keyStd = ObjectInspectorUtils.copyToStandardObject(hiveKey, mapInspector.getMapKeyObjectInspector() );
-                Object valStd = ObjectInspectorUtils.copyToStandardObject(hiveVal, mapInspector.getMapValueObjectInspector() );
+        for (Object keyObj : stdKeyList) {
+            if (!keyValues.contains(keyObj)) {
+                Object hiveKey = stdKeys.get(keyObj);
+                Object hiveVal = hiveMap.get(hiveKey);
+                Object keyStd = ObjectInspectorUtils.copyToStandardObject(hiveKey, mapInspector.getMapKeyObjectInspector());
+                Object valStd = ObjectInspectorUtils.copyToStandardObject(hiveVal, mapInspector.getMapValueObjectInspector());
 
-                retValSorted.put( keyStd, valStd );
-            } 
+                retValSorted.put(keyStd, valStd);
+            }
         }
         return retValSorted;
     }
@@ -117,31 +114,31 @@ public class MapRemoveKeysUDF extends GenericUDF {
     public ObjectInspector initialize(ObjectInspector[] arg0)
             throws UDFArgumentException {
         ObjectInspector first = arg0[0];
-        if(first.getCategory() == Category.MAP) {
-            mapInspector =  (MapObjectInspector) first;
+        if (first.getCategory() == Category.MAP) {
+            mapInspector = (MapObjectInspector) first;
         } else {
             throw new UDFArgumentException(" Expecting a map as first argument ");
         }
-        
+
         ObjectInspector second = arg0[1];
-        if(second.getCategory() == Category.LIST) {
+        if (second.getCategory() == Category.LIST) {
             keyListInspector = (ListObjectInspector) second;
         } else {
             throw new UDFArgumentException(" Expecting a list as second argument ");
         }
-        
+
         //// List inspector ...
-        if( ! ( keyListInspector.getListElementObjectInspector().getCategory() == Category.PRIMITIVE)) {
+        if (!(keyListInspector.getListElementObjectInspector().getCategory() == Category.PRIMITIVE)) {
             throw new UDFArgumentException(" Expecting a primitive as key list elements.");
         }
         ObjectInspector mapKeyInspector = mapInspector.getMapKeyObjectInspector();
-        if( ! ( mapKeyInspector.getCategory() == Category.PRIMITIVE)) {
+        if (!(mapKeyInspector.getCategory() == Category.PRIMITIVE)) {
             throw new UDFArgumentException(" Expecting a primitive as map key elements.");
         }
-        if( ((PrimitiveObjectInspector)keyListInspector.getListElementObjectInspector()).getPrimitiveCategory() != ((PrimitiveObjectInspector)mapKeyInspector).getPrimitiveCategory() ) {
+        if (((PrimitiveObjectInspector) keyListInspector.getListElementObjectInspector()).getPrimitiveCategory() != ((PrimitiveObjectInspector) mapKeyInspector).getPrimitiveCategory()) {
             throw new UDFArgumentException(" Expecting keys to be of same types.");
         }
-        
+
         retValInspector = (StandardMapObjectInspector) ObjectInspectorUtils.getStandardObjectInspector(first);
         return retValInspector;
     }
