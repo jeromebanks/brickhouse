@@ -16,8 +16,6 @@ package brickhouse.udf.collect;
  *
  **/
 
-import java.util.List;
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -25,59 +23,53 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 
 
 /**
- *   Workaround for the Hive bug 
- *   https://issues.apache.org/jira/browse/HIVE-1955
- *   
- *  FAILED: Error in semantic analysis: Line 4:3 Non-constant expressions for array indexes not supported key
- *  
- *   
- *  Use instead of [ ] syntax,   
- *
- *
+ * Workaround for the Hive bug
+ * https://issues.apache.org/jira/browse/HIVE-1955
+ * <p/>
+ * FAILED: Error in semantic analysis: Line 4:3 Non-constant expressions for array indexes not supported key
+ * <p/>
+ * <p/>
+ * Use instead of [ ] syntax,
  */
-@Description(name="last_index",
-value = "_FUNC_(x) - Last value in an array " 
+@Description(name = "last_index",
+        value = "_FUNC_(x) - Last value in an array "
 )
 public class LastIndexUDF extends GenericUDF {
-	private ListObjectInspector listInspector;
-	
+    private ListObjectInspector listInspector;
 
-	@Override
-	public Object evaluate(DeferredObject[] arg0) throws HiveException {
-		Object list =  arg0[0].get();
-		int lastIdx = listInspector.getListLength(list) -1;
-		if( lastIdx >=0) {
-		  Object unInsp =  listInspector.getListElement(list, lastIdx);
-		  return unInsp;
-		} else {
-			return null;
-		}
-	}
 
-	@Override
-	public String getDisplayString(String[] arg0) {
-		return "last_index( " + arg0[0] + " )";
-	}
+    @Override
+    public Object evaluate(DeferredObject[] arg0) throws HiveException {
+        Object list = arg0[0].get();
+        int lastIdx = listInspector.getListLength(list) - 1;
+        if (lastIdx >= 0) {
+            Object unInsp = listInspector.getListElement(list, lastIdx);
+            return unInsp;
+        } else {
+            return null;
+        }
+    }
 
-	@Override
-	public ObjectInspector initialize(ObjectInspector[] arg0)
-			throws UDFArgumentException {
-		if( arg0.length != 1) {
-			throw new UDFArgumentException("last_index takes an array as an argument.");
-		}
-		if( arg0[0].getCategory() != Category.LIST ) {
-			throw new UDFArgumentException("last_index takes an array as an argument.");
-		}
-		listInspector = (ListObjectInspector) arg0[0];
-		
-		return  listInspector.getListElementObjectInspector();
-	}
+    @Override
+    public String getDisplayString(String[] arg0) {
+        return "last_index( " + arg0[0] + " )";
+    }
+
+    @Override
+    public ObjectInspector initialize(ObjectInspector[] arg0)
+            throws UDFArgumentException {
+        if (arg0.length != 1) {
+            throw new UDFArgumentException("last_index takes an array as an argument.");
+        }
+        if (arg0[0].getCategory() != Category.LIST) {
+            throw new UDFArgumentException("last_index takes an array as an argument.");
+        }
+        listInspector = (ListObjectInspector) arg0[0];
+
+        return listInspector.getListElementObjectInspector();
+    }
 
 }

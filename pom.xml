@@ -1,159 +1,159 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.klout</groupId>
-	<artifactId>brickhouse</artifactId>
-	<version>0.7.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
-	<name>Brickhouse</name>
-	<description>Extensions of Hive for the Data Developer</description>
-	<url>https://github.com/klout/brickhouse</url>
+    <groupId>com.klout</groupId>
+    <artifactId>brickhouse</artifactId>
+    <version>0.7.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>Brickhouse</name>
+    <description>Extensions of Hive for the Data Developer</description>
+    <url>https://github.com/klout/brickhouse</url>
 
-	<issueManagement>
-		<url>https://github.com/klout/brickhouse/issues</url>
-		<system>GitHub Issues</system>
-	</issueManagement>
+    <issueManagement>
+        <url>https://github.com/klout/brickhouse/issues</url>
+        <system>GitHub Issues</system>
+    </issueManagement>
 
-	<licenses>
-		<license>
-			<name>Apache License 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-	<scm>
-		<url>https://github.com/klout/brickhouse</url>
-		<connection>scm:git:git://github.com/klout/brickhouse.git</connection>
-		<developerConnection>scm:git:git@github.com:klout/brickhouse.git</developerConnection>
-	</scm>
+    <scm>
+        <url>https://github.com/klout/brickhouse</url>
+        <connection>scm:git:git://github.com/klout/brickhouse.git</connection>
+        <developerConnection>scm:git:git@github.com:klout/brickhouse.git</developerConnection>
+    </scm>
 
-	<developers>
-		<developer>
-			<email>jerome@klout.com</email>
-			<name>Jerome Banks</name>
-			<url>https://github.com/jeromebanks</url>
-			<id>jeromebanks</id>
-		</developer>
-	</developers>
+    <developers>
+        <developer>
+            <email>jerome@klout.com</email>
+            <name>Jerome Banks</name>
+            <url>https://github.com/jeromebanks</url>
+            <id>jeromebanks</id>
+        </developer>
+    </developers>
 
-	<properties>
-	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-       <apache.hadoop.version>0.20.2</apache.hadoop.version>
-       <apache.hbase.version>0.92.1</apache.hbase.version>
-	   <apache.hive.version>0.10.0</apache.hive.version>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <apache.hadoop.version>0.20.2</apache.hadoop.version>
+        <apache.hbase.version>0.92.1</apache.hbase.version>
+        <apache.hive.version>0.10.0</apache.hive.version>
+    </properties>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-site-plugin</artifactId>
-				<version>3.0</version>
-				<configuration>
-					<reportPlugins>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-project-info-reports-plugin</artifactId>
-							<version>2.2</version>
-							<configuration>
-								<dependencyDetailsEnabled>true</dependencyDetailsEnabled>
-								<dependencyLocationsEnabled>true</dependencyLocationsEnabled>
-							</configuration>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-javadoc-plugin</artifactId>
-							<version>2.7</version>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-surefire-report-plugin</artifactId>
-							<version>2.6</version>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-checkstyle-plugin</artifactId>
-							<version>2.6</version>
-						</plugin>
-					</reportPlugins>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-				<!--
-			<plugin>
-			   <groupId>org.apache.maven.plugins</groupId>
-			   <artifactId>maven-gpg-plugin</artifactId>
-			   <executions>
-			     <execution>
-			       <id>sign-artifacts</id>
-			       <phase>verify</phase>
-			       <goals>
-			         <goal>sign</goal>
-			       </goals>
-			     </execution>
-			   </executions>
-			 </plugin>
-			 -->
-		</plugins>
-	</build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <reportPlugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-project-info-reports-plugin</artifactId>
+                            <version>2.2</version>
+                            <configuration>
+                                <dependencyDetailsEnabled>true</dependencyDetailsEnabled>
+                                <dependencyLocationsEnabled>true</dependencyLocationsEnabled>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <version>2.7</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-report-plugin</artifactId>
+                            <version>2.6</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-checkstyle-plugin</artifactId>
+                            <version>2.6</version>
+                        </plugin>
+                    </reportPlugins>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+        <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-gpg-plugin</artifactId>
+           <executions>
+             <execution>
+               <id>sign-artifacts</id>
+               <phase>verify</phase>
+               <goals>
+                 <goal>sign</goal>
+               </goals>
+             </execution>
+           </executions>
+         </plugin>
+         -->
+        </plugins>
+    </build>
 
-  <reporting>
-      <plugins>
-       <plugin>
-       <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.10</version>
-       <configuration>
-       <configLocation>maven_checks.xml</configLocation>
-      </configuration>
-     </plugin>
-   </plugins>
- </reporting>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.10</version>
+                <configuration>
+                    <configLocation>maven_checks.xml</configLocation>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 
-	<dependencies>
+    <dependencies>
 
         <!-- Hive -->
         <dependency>
@@ -174,11 +174,11 @@
             <artifactId>hive-exec</artifactId>
             <version>${apache.hive.version}</version>
             <exclusions>
-              <exclusion>
-               <groupId>javax.jdo</groupId>
-               <artifactId>jdo2-api</artifactId>
-              </exclusion>
-            </exclusions> 
+                <exclusion>
+                    <groupId>javax.jdo</groupId>
+                    <artifactId>jdo2-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -192,66 +192,64 @@
             <artifactId>hbase</artifactId>
             <version>${apache.hbase.version}</version>
         </dependency>
-		
-	    <dependency>
-	       <groupId>com.google.guava</groupId>
-	       <artifactId>guava</artifactId>
-	       <version>18.0</version>
-	    </dependency>
 
-	    <dependency>
-	       <groupId>joda-time</groupId>
-	       <artifactId>joda-time</artifactId>
-	       <version>2.1</version>
-	    </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>18.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.1</version>
+        </dependency>
 
         <!--
            Depend on streamlib 
 		     for  HyperLogLog 
 		     implementation
 		  -->
-	    <dependency>
-	       <groupId>com.clearspring.analytics</groupId>
-	       <artifactId>stream</artifactId>
-	       <version>2.3.0</version>
-	    </dependency>
+        <dependency>
+            <groupId>com.clearspring.analytics</groupId>
+            <artifactId>stream</artifactId>
+            <version>2.3.0</version>
+        </dependency>
 
 
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8</version>
+            <scope>test</scope>
+        </dependency>
 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8</version>
-			<scope>test</scope>
-		</dependency>
+
+    </dependencies>
+
+    <!--
+       <distributionManagement>
+         <repository>
+           <id>sonatype-nexus-staging</id>
+            <name>Nexus Staging Repository</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+         </repository>
+     </distributionManagement>
+     -->
 
 
-	</dependencies>
-
- <!--
     <distributionManagement>
-      <repository>
-	    <id>sonatype-nexus-staging</id>
-	     <name>Nexus Staging Repository</name>
-	     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-      </repository>
-  </distributionManagement>
-  -->
-
-
-  <distributionManagement>
-      <repository>
-	   <id>central</id>
-	    <name>maven-repo-releases</name>
-	    <url>http://maven.klout:8081/artifactory/libs-release-local</url>
-	  </repository>
-	 <snapshotRepository>
-       <id>snapshots</id>
-	   <name>maven-repo-snapshots</name>
-	   <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
-     </snapshotRepository>
-  </distributionManagement>
-
+        <repository>
+            <id>central</id>
+            <name>maven-repo-releases</name>
+            <url>http://maven.klout:8081/artifactory/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>maven-repo-snapshots</name>
+            <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 
 </project>

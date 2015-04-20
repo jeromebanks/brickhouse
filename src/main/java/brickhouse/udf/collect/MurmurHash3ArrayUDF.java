@@ -2,24 +2,24 @@ package brickhouse.udf.collect;
 
 /**
  * This code is public domain.
- * 
+ *
  * MurmurHash3 was written by Austin Appleby and put into the
  * public domain. The author hereby disclaims copyright to this
  * source code. See http://code.google.com/p/smhasher
- * 
+ *
  * The java port for MurmurHash3 found here was authored by
  * Yonik Seeley and was placed into the public domain per
  * https://github.com/yonik/java_util/blob/master/src/util/hash/MurmurHash3.java
- * 
+ *
  * This MurmurHash3 Hive UDF was authored by Vangie Shue
  * and is placed in the public domain.
- * 
+ *
  **/
-
-import java.util.ArrayList;
 
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.io.IntWritable;
+
+import java.util.ArrayList;
 
 /**
  * Evaluates the 32 bit x86 version of MurmurHash3 of array<string>.
@@ -28,28 +28,28 @@ import org.apache.hadoop.io.IntWritable;
  */
 
 public class MurmurHash3ArrayUDF extends UDF {
-    
+
     public ArrayList<Integer> evaluate(ArrayList<String> list, IntWritable seed) {
         ArrayList<Integer> hashList = new ArrayList<Integer>();
 
         if (list == null || list.size() < 1) {
             return hashList;
         }
-        
+
         for (String str : list) {
             hashList.add(hash_str(str, seed.get()));
         }
 
         return hashList;
     }
-    
+
     public ArrayList<Integer> evaluate(ArrayList<String> list) {
         ArrayList<Integer> hashList = new ArrayList<Integer>();
 
         if (list == null || list.size() < 1) {
             return hashList;
         }
-        
+
         for (String str : list) {
             hashList.add(hash_str(str));
         }
@@ -94,10 +94,10 @@ public class MurmurHash3ArrayUDF extends UDF {
         switch (len & 0x03) {
             case 3:
                 k1 = (data[roundedEnd + 2] & 0xff) << 16;
-            // fallthrough
+                // fallthrough
             case 2:
                 k1 |= (data[roundedEnd + 1] & 0xff) << 8;
-            // fallthrough
+                // fallthrough
             case 1:
                 k1 |= data[roundedEnd] & 0xff;
                 k1 *= c1;
