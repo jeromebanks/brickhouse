@@ -255,8 +255,6 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
             int listColLen = listColumnQualInspector.getListLength( listColObj );
             int listValLen = listColumnValInspector.getListLength( listValObj );
 
-
-
             if( listColLen != listValLen) {
                 throw new HiveException(" Array lengths must be the same :: Number of Columns = " + listColLen
                         + " ; Number of values = " + listValLen + " for key: " + Bytes.toString(key));
@@ -300,6 +298,8 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
                         // By default values are long when column qualifier does not have columnType info
                         valueBytes = Bytes.toBytes(Long.parseLong(value));
                     }
+                } else {
+                    valueBytes = HTableFactory.getByteArray(uninspVal, valueInspector);
                 }
 
                 //String columnQualifier = columnInspector.getPrimitiveJavaObject(uninspCol);
@@ -310,8 +310,6 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
                     if( valueBytes != null && colQualBytes != null) {
                         columns.add(colQualBytes);
                         values.add(valueBytes);
-                    } else {
-                        getReporter().getCounter(MultiColumnPutUDAFCounter.NULL_VALUE_INSERT_FAILURE).increment(1);
                     }
                 } else {
                     getReporter().getCounter(MultiColumnPutUDAFCounter.NULL_KEY_INSERT_FAILURE).increment(1);
@@ -323,7 +321,11 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
                 batchUpdate(kvBuff, false);
             }
 
-            kvBuff.addColumnsAndValues(key, columns, values);
+            if(values.size() > 0) {
+                kvBuff.addColumnsAndValues(key, columns, values);
+            } else {
+                getReporter().getCounter(MultiColumnPutUDAFCounter.NULL_VALUES_INSERT_FAILURE).increment(1);
+            }
         }
 
 
@@ -482,7 +484,7 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
     }
 
     private static enum MultiColumnPutUDAFCounter {
-        NULL_KEY_INSERT_FAILURE, NULL_VALUE_INSERT_FAILURE, NUMBER_OF_SUCCESSFUL_PUTS, NUMBER_OF_BATCH_OPERATIONS;
+        NULL_KEY_INSERT_FAILURE, NULL_VALUES_INSERT_FAILURE, NUMBER_OF_SUCCESSFUL_PUTS, NUMBER_OF_BATCH_OPERATIONS;
     }
 
     private static enum ColumnType {
