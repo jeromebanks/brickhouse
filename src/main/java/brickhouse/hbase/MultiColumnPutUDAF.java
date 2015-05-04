@@ -280,23 +280,25 @@ public class MultiColumnPutUDAF extends AbstractGenericUDAFResolver {
                     if(columnQual.contains(":")) {
                         String[] columnAndType = columnQual.split(":");
                         ColumnType type = ColumnType.fromColumnType(columnAndType[1].toLowerCase());
-                        switch (type) {
-                            case DOUBLE:
-                                valueBytes = Bytes.toBytes(Double.parseDouble(value));
-                                break;
-                            case INT:
-                                valueBytes = Bytes.toBytes(Integer.parseInt(value));
-                                break;
-                            case LONG:
-                                valueBytes = Bytes.toBytes(Long.parseLong(value));
-                                break;
-                            default:
-                                valueBytes = value.getBytes();
-                                break;
+                        if(value != null) {
+                            switch (type) {
+                                case DOUBLE:
+                                    valueBytes = Bytes.toBytes(Double.parseDouble(value));
+                                    break;
+                                case INT:
+                                    valueBytes = Bytes.toBytes(Integer.parseInt(value));
+                                    break;
+                                case LONG:
+                                    valueBytes = Bytes.toBytes(Long.parseLong(value));
+                                    break;
+                                default:
+                                    valueBytes = value.getBytes();
+                                    break;
+                            }
                         }
                     } else {
                         // By default values are long when column qualifier does not have columnType info
-                        valueBytes = Bytes.toBytes(Long.parseLong(value));
+                        if(value != null) valueBytes = Bytes.toBytes(Long.parseLong(value));
                     }
                 } else {
                     valueBytes = HTableFactory.getByteArray(uninspVal, valueInspector);
