@@ -43,6 +43,7 @@
         <apache.hadoop.version>0.20.2</apache.hadoop.version>
         <apache.hbase.version>0.92.1</apache.hbase.version>
         <apache.hive.version>0.10.0</apache.hive.version>
+        <codehaus.jackson.version>1.8.8</codehaus.jackson.version>
     </properties>
 
     <build>
@@ -216,6 +217,29 @@
             <version>2.3.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+            <version>${codehaus.jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+            <version>${codehaus.jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+            <version>${codehaus.jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>${codehaus.jackson.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
