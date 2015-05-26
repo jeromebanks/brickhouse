@@ -49,6 +49,7 @@ public class GroupCountUDF extends UDF {
 
 	public Integer evaluate( String grouping) {
 		// First time through ...
+		System.out.println(" GROUP COUNT GROUPING = " + grouping + " LAST GROUPING = " + lastGrouping +  " LAST COUNT = " + lastCount);
 		if( lastGrouping ==  null) {
 			lastGrouping = grouping;
 			lastCount = 1;
