@@ -61,9 +61,16 @@ public class SessionizeUDF extends UDF {
 		private long lastTS = 0;
 		private String lastUUID = null;
 
-	  
 	  public String evaluate(String uid, long ts, int tolerance) {
-		  if (uid.equals(lastUid) && timeStampCompare(lastTS, ts, tolerance)) { 
+	      return evaluate( uid, ts, tolerance, false);
+	  }
+
+	  public String evaluate(String uid, long ts, int tolerance, boolean startNewSession) {
+		  if( startNewSession ) {
+			  lastUid = uid;
+			  lastTS = ts;
+			  lastUUID=UUID.randomUUID().toString();
+		  } else if (uid.equals(lastUid) && timeStampCompare(lastTS, ts, tolerance)) { 
 			  lastTS = ts;			  
 		  } else if (uid.equals(lastUid)) {
 			  lastTS = ts;
@@ -72,12 +79,12 @@ public class SessionizeUDF extends UDF {
 			  lastUid = uid;
 			  lastTS = ts;
 			  lastUUID=UUID.randomUUID().toString();
-		  }
+		  } 
 		  return lastUUID;
 	  }
 
 	  public String evaluate(String uid,  long ts) { 
-		 return evaluate(uid, ts, 1800000);
+		 return evaluate(uid, ts, 1800000, false);
 	  }
 	  
 	  private Boolean timeStampCompare(long lastTS, long ts, int ms) { 

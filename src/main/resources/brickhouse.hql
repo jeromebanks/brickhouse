@@ -28,6 +28,7 @@ CREATE TEMPORARY FUNCTION truncate_array AS 'brickhouse.udf.collect.TruncateArra
 CREATE TEMPORARY FUNCTION union_max AS 'brickhouse.udf.collect.UnionMaxUDAF';
 CREATE TEMPORARY FUNCTION union_map AS 'brickhouse.udf.collect.UnionUDAF';
 CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
+CREATE TEMPORARY FUNCTION previous_value AS 'brickhouse.udf.collect.PreviousValueUDF';
 CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
 CREATE TEMPORARY FUNCTION array_constants AS 'brickhouse.udf.collect.ArrayOfConstantsUDF';
 
