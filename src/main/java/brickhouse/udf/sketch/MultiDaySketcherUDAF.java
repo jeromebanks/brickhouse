@@ -25,6 +25,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.udf.generic.AbstractGenericUDAFResolver;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
+import org.apache.hadoop.hive.serde2.objectinspector.ConstantObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
@@ -35,6 +36,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspect
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
@@ -114,6 +116,7 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 		private LongObjectInspector longInspector;
 		private ListObjectInspector uniqInspector;
 		private ListObjectInspector daysArrInspector;
+		private int sketchSetSize = SketchSet.DEFAULT_MAX_ITEMS;
 		
 
 
@@ -141,7 +144,17 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 					uniqInspector = (ListObjectInspector) parameters[2];
 					asofInspector = (StringObjectInspector) parameters[3];
 					daysArrInspector = (ListObjectInspector) parameters[4];
+					
+					if(parameters.length > 5) {
+				   	    if(!( parameters[5] instanceof ConstantObjectInspector )
+				   	   		|| !(parameters[5] instanceof IntObjectInspector) ) {
+			    	        throw new HiveException("Sketch Set size must be an int constant");
+			    	    }
+			    	    ConstantObjectInspector sizeOI = (ConstantObjectInspector) parameters[5];
+			            this.sketchSetSize = ((IntWritable) sizeOI.getWritableConstantValue()).get();
+					}
 			   }
+		      	
 				
 			    //// return a list of list of strings ...
 				//// First string will the the count, rest are the uniques ...
@@ -163,6 +176,8 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 				fieldNames.add( "cnt");
 				fieldInspectors.add( PrimitiveObjectInspectorFactory.javaLongObjectInspector);
 				fieldNames.add( "sketch_sets");
+				fieldInspectors.add( PrimitiveObjectInspectorFactory.javaIntObjectInspector);
+				fieldNames.add( "sketch_set_size");
 			
 				fieldInspectors.add( ObjectInspectorFactory.getStandardListObjectInspector( PrimitiveObjectInspectorFactory.javaStringObjectInspector));
 
@@ -266,15 +281,20 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 			    	
 				String numDaysStr = strInspector.getPrimitiveJavaObject(strList.get(0));
 				daysArr[idx] = Integer.decode( numDaysStr);
-				///LOG.info(" numDays =  " + numDaysStr);
 				
 				String cntStr = strInspector.getPrimitiveJavaObject(strList.get(1));
-				///LOG.info(" Count Strr = " + cntStr);
+				
 				Long cnt = Long.decode(cntStr);
 				myagg.counts[ idx ] += cnt;
-				for(int j=2; j< strList.size(); ++j) {
+
+			    int sketchSize = Integer.parseInt( strInspector.getPrimitiveJavaObject( strList.get(2))	);
+				//// Create the sketches to the right size, if no items have been added
+				if( myagg.sketches[idx].lastItem() == null) {
+				   myagg.sketches[idx] = new SketchSet( sketchSize);
+				}
+				for(int j=3; j< strList.size(); ++j) {
 					String uniqStr = strInspector.getPrimitiveJavaObject(strList.get(j) );
-					  myagg.sketches[idx].addItem(uniqStr);
+					myagg.sketches[idx].addItem(uniqStr);
 				}
 				idx++;
 			}
@@ -287,7 +307,7 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 				countBuff.counts = new long[daysArr.length];
 					countBuff.sketches = new SketchSet[daysArr.length];
 					for (int i = 0; i < countBuff.sketches.length; ++i)
-						countBuff.sketches[i] = new SketchSet();
+						countBuff.sketches[i] = new SketchSet( sketchSetSize);
 			}
 		}
 
@@ -322,6 +342,7 @@ public class MultiDaySketcherUDAF extends AbstractGenericUDAFResolver {
 				
 				strList.add( Integer.toString( daysArr[i] ));
 				strList.add( Long.toString(myagg.counts[i]) );
+				strList.add( Integer.toString(myagg.sketches[i].getMaxItems() ) );
 				
 				
 				List<String> itemList = myagg.sketches[i].getMinHashItems();
