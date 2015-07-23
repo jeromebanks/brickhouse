@@ -1,0 +1,9 @@
+language: java
+
+jdk:
+  - openjdk7
+
+notifications:
+  email:
+    - jerome_banks@yahoo.com
+
