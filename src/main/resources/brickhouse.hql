@@ -91,6 +91,7 @@ CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put_columns AS 'brickhouse.hbase.BatchMultiColumnPutUDF';
 CREATE TEMPORARY FUNCTION hbase_multicolumn_put AS 'brickhouse.hbase.MultiColumnPutUDAF';
 CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
+CREATE TEMPORARY FUNCTION hbase_batch_delete AS 'brickhouse.hbase.BatchDeleteUDAF';
 
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
