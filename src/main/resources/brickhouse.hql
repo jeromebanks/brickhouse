@@ -31,6 +31,7 @@ CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
 CREATE TEMPORARY FUNCTION previous_value AS 'brickhouse.udf.collect.PreviousValueUDF';
 CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
 CREATE TEMPORARY FUNCTION array_constants AS 'brickhouse.udf.collect.ArrayOfConstantsUDF';
+CREATE TEMPORARY FUNCTION map_remove_nulls AS 'brickhouse.udf.collect.MapRemoveNullValuesUDF';
 
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF'; 
@@ -107,4 +108,3 @@ CREATE TEMPORARY FUNCTION xunit_explode AS 'brickhouse.udf.xunit.XUnitExplodeUDT
 CREATE TEMPORARY FUNCTION get_ypath AS 'brickhouse.udf.xunit.GetYPathUDF';
 CREATE TEMPORARY FUNCTION remove_ypath AS 'brickhouse.udf.xunit.RemoveYPathUDF';
 CREATE TEMPORARY FUNCTION getsegments AS 'brickhouse.udf.xunit.GetYPathSegmentsUDF';
-
