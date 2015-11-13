@@ -31,6 +31,7 @@ CREATE TEMPORARY FUNCTION sessionize AS 'brickhouse.udf.collect.SessionizeUDF';
 CREATE TEMPORARY FUNCTION previous_value AS 'brickhouse.udf.collect.PreviousValueUDF';
 CREATE TEMPORARY FUNCTION group_count AS 'brickhouse.udf.collect.GroupCountUDF';
 CREATE TEMPORARY FUNCTION array_constants AS 'brickhouse.udf.collect.ArrayOfConstantsUDF';
+CREATE TEMPORARY FUNCTION map_remove_nulls AS 'brickhouse.udf.collect.MapRemoveNullValuesUDF';
 
 CREATE TEMPORARY FUNCTION json_map AS 'brickhouse.udf.json.JsonMapUDF';
 CREATE TEMPORARY FUNCTION json_split AS 'brickhouse.udf.json.JsonSplitUDF'; 
@@ -90,7 +91,10 @@ CREATE TEMPORARY FUNCTION hbase_get AS 'brickhouse.hbase.GetUDF';
 CREATE TEMPORARY FUNCTION hbase_put AS 'brickhouse.hbase.PutUDF';
 CREATE TEMPORARY FUNCTION hbase_batch_put_columns AS 'brickhouse.hbase.BatchMultiColumnPutUDF';
 CREATE TEMPORARY FUNCTION hbase_multicolumn_put AS 'brickhouse.hbase.MultiColumnPutUDAF';
+CREATE TEMPORARY FUNCTION hbase_array_value_put AS 'brickhouse.hbase.ArrayValuePutUDF';
+
 CREATE TEMPORARY FUNCTION salted_bigint_key AS 'brickhouse.hbase.SaltedBigIntUDF';
+CREATE TEMPORARY FUNCTION hbase_batch_delete AS 'brickhouse.hbase.BatchDeleteUDAF';
 
 CREATE TEMPORARY FUNCTION salted_bigint AS 'brickhouse.hbase.SaltedBigIntUDF';
 
@@ -104,4 +108,3 @@ CREATE TEMPORARY FUNCTION xunit_explode AS 'brickhouse.udf.xunit.XUnitExplodeUDT
 CREATE TEMPORARY FUNCTION get_ypath AS 'brickhouse.udf.xunit.GetYPathUDF';
 CREATE TEMPORARY FUNCTION remove_ypath AS 'brickhouse.udf.xunit.RemoveYPathUDF';
 CREATE TEMPORARY FUNCTION getsegments AS 'brickhouse.udf.xunit.GetYPathSegmentsUDF';
-
