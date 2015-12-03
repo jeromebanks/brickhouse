@@ -83,7 +83,7 @@ public class XUnitTest extends TestCase {
 		ArrayList<Object> structList = new ArrayList<Object>(1);
 		structList.add(struct);
 		Object[] dims = { structList };
-		xploder.process(dims);
+		//xploder.process(dims);
 	}
 	
 	/**
@@ -127,7 +127,7 @@ public class XUnitTest extends TestCase {
 		ArrayList<Object> structList = new ArrayList<Object>(1);
 		structList.add(getOrdTwoStruct("1", "2"));
 		Object[] dims = { structList };
-		xploder.process(dims);
+		//xploder.process(dims);
 	}
 
 	
@@ -141,7 +141,7 @@ public class XUnitTest extends TestCase {
 		structList.add(getOrdTwoStruct("1", "2"));
 		structList.add(getAlphaThreeStruct("a", "b", "c"));
 		Object[] dims = { structList };
-		xploder.process(dims);
+		//xploder.process(dims);
 	}
 
 	/**
@@ -182,7 +182,92 @@ public class XUnitTest extends TestCase {
 		structList.add(getEventStruct("s_page_view_api"));
 		structList.add(getEventStruct("nonspammer-validated"));
 		Object[] dims = { structList };
-		xploder.process(dims);
+		//xploder.process(dims);
 	}
+
+    @Test
+    public void testEventExplodeXUnit() throws UDFArgumentException, HiveException {
+        GenericUDTF xploder = new XUnitExplodeUDTF();
+        ObjectInspector[] oiList = { ObjectInspectorFactory.getStandardListObjectInspector(getStructOI()) };
+        ObjectInspector intOI = PrimitiveObjectInspectorFactory.javaIntObjectInspector;
+        PrimitiveObjectInspectorFactory.javaIntObjectInspector.set(intOI,4);
+        ObjectInspector boolOI = PrimitiveObjectInspectorFactory.javaBooleanObjectInspector;
+        PrimitiveObjectInspectorFactory.javaBooleanObjectInspector.set(boolOI,true);
+        ObjectInspector[] oi = new ObjectInspector[3];
+        //oi[0] = ObjectoiList;
+        xploder.initialize(oiList);
+
+        ArrayList<Object> structList = new ArrayList<Object>();
+
+        List<String> nList0 = new ArrayList<String>();
+        nList0.add("e");
+        List<String> vList0 = new ArrayList<String> ();
+        vList0.add("meetme");
+        Object struct0 = getStructObject("event",nList0,vList0);
+        structList.add(struct0);
+
+        List<String> nList5 = new ArrayList<String>();
+        nList5.add("is_spam");
+        List<String> vList5 = new ArrayList<String> ();
+        vList5.add("nonspammer-validated");
+        Object struct5 = getStructObject("spam",nList5,vList5);
+        structList.add(struct5);
+
+        List<String> nList2 = new ArrayList<String>();
+        nList2.add("c1_profile_view__friends");
+        //nList2.add("null");
+        List<String> vList2 = new ArrayList<String>();
+        vList2.add("NA");
+        Object struct2 = getStructObject("custom",nList2,vList2);
+        structList.add(struct2);
+
+        List<String> nList7 = new ArrayList<String>();
+        nList7.add("c2_profile_view__platform");
+        //nList7.add("null");
+        List<String> vList7 = new ArrayList<String>();
+        vList7.add("Web");
+        Object struct7 = getStructObject("custom",nList7,vList7);
+        structList.add(struct7);
+
+        List<String> nList8 = new ArrayList<String>();
+        nList8.add("test");
+        List<String> vList8 = new ArrayList<String>();
+        vList8.add("W2");
+        Object struct8 = getStructObject("custom",nList8,vList8);
+        structList.add(struct8);
+
+
+        List<String> nList = new ArrayList<String>(1);
+        nList.add(0, "bucket");
+        List<String> vList = new ArrayList<String>(1);
+        vList.add(0, "25-34");
+        Object struct = getStructObject("age", nList, vList);
+        //validateStructObject(struct, "age", nList, vList);
+        structList.add(struct);
+
+
+
+        List<String> nList4 = new ArrayList<String>();
+        nList4.add("continent");nList4.add("country");nList4.add("state");
+        List<String> vList4 = new ArrayList<String> ();
+        vList4.add("NA");vList4.add("USA");vList4.add("CA");
+        Object struct4 = getStructObject("geo",nList4,vList4);
+        structList.add(struct4);
+
+        List<String> nList3 = new ArrayList<String>();
+        nList3.add("p");nList3.add("p2");
+        List<String> vList3 = new ArrayList<String> ();
+        vList3.add("Desktop");vList3.add("Desktop Web");
+        Object struct3 = getStructObject("platform",nList3,vList3);
+        structList.add(struct3);
+
+
+
+        Object[] dims = new Object[2];
+        dims[0] =  structList;
+        dims[1] = 2;
+        //dims[2] = true;
+        //xploder.process(dims);
+    }
 	
 }
