@@ -206,7 +206,7 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
     @Override
     public void process(Object[] args) throws HiveException {
         List<Object>  dimValuesList = (List<Object>) listInspector.getList(args[0]);
-        boolean eventProcess=false;
+        boolean eventProcess=true;
         if( globalFlagInspector != null ) {
             boolean globalFlag = globalFlagInspector.get( args[2]);
             if(globalFlag) {
