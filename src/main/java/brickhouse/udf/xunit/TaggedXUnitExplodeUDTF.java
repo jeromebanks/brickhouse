@@ -206,7 +206,7 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
     @Override
     public void process(Object[] args) throws HiveException {
         List<Object>  dimValuesList = (List<Object>) listInspector.getList(args[0]);
-        boolean eventProcess=true;
+        boolean eventProcess=false;
         if( globalFlagInspector != null ) {
             boolean globalFlag = globalFlagInspector.get( args[2]);
             if(globalFlag) {
@@ -220,6 +220,7 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
         if(maxDimInspector != null) {
             maxDims = maxDimInspector.get( args[1]);
         }
+       // maxDims=2;
         if(eventProcess) {
             try {
                 if (dimValuesList != null && dimValuesList.size() > 0) {
@@ -286,17 +287,17 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
             XUnitDesc x1 = fromPath(ypath);
             results.add(x1);
             for(int i = 1; i < dimObjectList.size(); i++) {
-                List<YPathDesc> ypaths1 = generateYPaths(i);
+                List<YPathDesc> ypaths1 = generateYPaths(dimObjectList.get(i));
                 for(YPathDesc y1 : ypaths1) {
                     XUnitDesc x2 = x1.addYPath(y1);
                     results.add(x2);
                     for(int j=i+1; j<dimObjectList.size(); j++) {
-                        List<YPathDesc> ypaths2 = generateYPaths(j);
+                        List<YPathDesc> ypaths2 = generateYPaths(dimObjectList.get(j));
                         for(YPathDesc y2 : ypaths2){
                             XUnitDesc x3 = x2.addYPath(y2);
                             results.add(x3);
                             for(int k=j+1; k < dimObjectList.size(); k++) {
-                                List<YPathDesc> ypaths3 = generateYPaths(k);
+                                List<YPathDesc> ypaths3 = generateYPaths(dimObjectList.get(k));
                                 for(YPathDesc y3:ypaths3){
                                     XUnitDesc x4 = x3.addYPath(y3);
                                     results.add(x4);
