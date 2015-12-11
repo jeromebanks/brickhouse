@@ -75,6 +75,8 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
 
     private IntObjectInspector maxDimInspector = null;
     private int maxDims = -1;
+    private int  nullXUnitCounter=0;
+    private static final int MAX_FAILURES_ALLOWED = 5000;
 
     private BooleanObjectInspector globalFlagInspector;
 
@@ -206,12 +208,13 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
     @Override
     public void process(Object[] args) throws HiveException {
         List<Object>  dimValuesList = (List<Object>) listInspector.getList(args[0]);
-        boolean eventProcess=true;
+        boolean eventProcess=false;
         if( globalFlagInspector != null ) {
             boolean globalFlag = globalFlagInspector.get( args[2]);
             if(globalFlag) {
-                eventProcess=false;
                 forwardXUnit(GLOBAL_UNIT );
+            }else{
+                eventProcess = true;
             }
         } else {
             forwardXUnit(GLOBAL_UNIT );
@@ -220,7 +223,7 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
         if(maxDimInspector != null) {
             maxDims = maxDimInspector.get( args[1]);
         }
-       // maxDims=2;
+        //maxDims=4;
         if(eventProcess) {
             try {
                 if (dimValuesList != null && dimValuesList.size() > 0) {
@@ -311,11 +314,15 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
 
         for(int i=1; i < dimObjectList.size(); i++) {
             List<YPathDesc> ypaths = generateYPaths(dimObjectList.get(i));
-            XUnitDesc xunit = fromPath(ypaths.get(0));
-            results.add(xunit);
-            for(int j=1;j<ypaths.size();j++){
-                XUnitDesc x2 = xunit.addYPath(ypaths.get(j));
-                results.add(x2);
+            if (ypaths != null && ypaths.size() > 0) {
+                XUnitDesc xunit = fromPath(ypaths.get(0));
+                results.add(xunit);
+                for (int j = 1; j < ypaths.size(); j++) {
+                    XUnitDesc x2 = xunit.addYPath(ypaths.get(j));
+                    results.add(x2);
+                }
+            }else {
+                incrCounter("NumXunitsZeroSizeFiler", 1);
             }
         }
 
@@ -552,11 +559,33 @@ public class TaggedXUnitExplodeUDTF extends GenericUDTF {
     }
 
     private void forwardXUnit( String xunit) throws HiveException {
+
         ///LOG.info(" Forwarding XUnit " + xunit);
         xunitFieldArr[0] = xunit;
-        forward( xunitFieldArr);
+        try{
+            forward( xunitFieldArr);
+        }catch(Exception e) {
+            long failedCount = getCounterValue("ForwardXunitFailure");
+            if (failedCount > MAX_FAILURES_ALLOWED) {
+                LOG.error("Too many forwardXunit failures occurred! Failure count: " + failedCount
+                        + " is greater than max allowed: " + MAX_FAILURES_ALLOWED
+                        + " current xunit that failed to forward: [" + xunit + "]");
+
+                throw new HiveException("Bailing out, forwardXunit has failed too many times!", e);
+            }
+            incrCounter("ForwardXunitFailure", 1);
+        }
     }
 
+    private long getCounterValue(String counterName) {
+        try {
+            return getReporter().getCounter("XunitExplode", counterName).getValue();
+        } catch( Exception exc) {
+            LOG.error("Unable to get distributed counter: " + counterName, exc);
+        }
+
+        return 0;
+    }
 
     /**
      *  Generate the "per-dimension" portion of the xunit
