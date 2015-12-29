@@ -44,8 +44,8 @@ public class AddISOPeriodUDF extends UDF {
 		}
 
 		DateTimeFormatter dateFormatter = org.joda.time.format.DateTimeFormat.forPattern(dateFormat);
+		DateTime input = dateFormatter.parseDateTime(dateString);
 
-		DateTime input = dateFormatter.parseDateTime(dateFormat);
 		Duration duration = periodFormatter.parsePeriod(periodString).toStandardDuration();
 		long seconds = duration.getStandardSeconds();
 
