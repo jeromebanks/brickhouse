@@ -1,6 +1,6 @@
 package brickhouse.udf.xunit;
 
-public class YPathDesc {
+public class YPathDesc implements Comparable{
 	private String _dimName;
     private String[] _attrNames;
     private String[] _attrValues;
@@ -41,5 +41,21 @@ public class YPathDesc {
        }
        return sb.toString();
     }
-    
+
+    public String[] getAttrNames() {
+        return _attrNames;
+    }
+
+    public String[] getAttrValues() {
+        return _attrValues;
+    }
+
+    public String getDimName() {
+        return this._dimName;
+    }
+
+    public int compareTo(Object obj) {
+        YPathDesc yp = (YPathDesc)obj;
+        return yp.getDimName().compareTo(_dimName);
+    }
 }
