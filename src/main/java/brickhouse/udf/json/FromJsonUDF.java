@@ -26,7 +26,9 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.BooleanObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.io.BooleanWritable;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -53,6 +55,7 @@ value = "_FUNC_(json,template,convert_flag) - Returns an arbitrary Hive Structur
 public class FromJsonUDF extends GenericUDF {
 	private StringObjectInspector jsonInspector;
 	private InspectorHandle inspHandle;
+	private boolean convertFromCamelCase = false;
 	
 
 	@Override
@@ -89,6 +92,22 @@ public class FromJsonUDF extends GenericUDF {
 		    throw new UDFArgumentException("from_json expects a JSON string and a template object");
 		}
 		jsonInspector = (StringObjectInspector) arg0[0];
+		/// Parse the camel case flag
+		if( arg0.length >2) {
+	       if( !( arg0[2] instanceof ConstantObjectInspector)
+	    		   || !(arg0[2] instanceof BooleanObjectInspector)) {
+		      throw new UDFArgumentException("camel case flag must be true or false");
+		   }
+	       ConstantObjectInspector camelFlagInsp = (ConstantObjectInspector) arg0[2];
+	       Object camelFlagObj = camelFlagInsp.getWritableConstantValue();
+	       if(camelFlagObj instanceof Boolean) {
+	    	  convertFromCamelCase = (Boolean)camelFlagObj;
+	       } else if( camelFlagObj instanceof BooleanWritable){
+	    	  convertFromCamelCase = ((BooleanWritable)camelFlagObj).get();
+	       } else{
+		      throw new UDFArgumentException("camel case flag must be true or false");
+	       }
+		}
 		if( arg0[1].getCategory() == Category.PRIMITIVE
 		        && ((PrimitiveObjectInspector)arg0[1]).getPrimitiveCategory() == PrimitiveCategory.STRING) {
 		    if( !( arg0[1] instanceof ConstantObjectInspector) ) {
@@ -97,9 +116,9 @@ public class FromJsonUDF extends GenericUDF {
 		    ConstantObjectInspector typeInsp = (ConstantObjectInspector) arg0[1];
 		    
 		    String typeStr = typeInsp.getWritableConstantValue().toString();
-		    inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandleFromTypeInfo(typeStr);
+		    inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandleFromTypeInfo(typeStr, convertFromCamelCase);
 		} else {
-		  inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandle( arg0[1]);
+		  inspHandle = InspectorHandle.InspectorHandleFactory.GenerateInspectorHandle( arg0[1], convertFromCamelCase);
 		}
 		
 		return inspHandle.getReturnType();

@@ -52,10 +52,10 @@ public interface InspectorHandle {
     		return null;
     	}
     	
-    	static public InspectorHandle GenerateInspectorHandleFromTypeInfo( String typeStr ) throws UDFArgumentException {
+    	static public InspectorHandle GenerateInspectorHandleFromTypeInfo( String typeStr, boolean convertFromCamelCase ) throws UDFArgumentException {
     	    TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(typeStr);
     	    ObjectInspector objInsp = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
-    	    return GenerateInspectorHandle(objInsp);
+    	    return GenerateInspectorHandle(objInsp, convertFromCamelCase);
     	}
     }
     /** 
@@ -74,7 +74,7 @@ public interface InspectorHandle {
     	public StructHandle( StructObjectInspector structInspector, boolean convertFromCamelCase) throws UDFArgumentException {
     		fieldNames = new ArrayList<String>();
     		handleList = new ArrayList<InspectorHandle>();
-    		convertFromCamelCase = convertFromCamelCase;
+    		this.convertFromCamelCase = convertFromCamelCase;
     		
     		List<? extends StructField> refs =  structInspector.getAllStructFieldRefs();
     		for( StructField ref : refs) {
