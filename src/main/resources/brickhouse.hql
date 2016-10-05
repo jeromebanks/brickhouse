@@ -8,6 +8,7 @@ CREATE TEMPORARY FUNCTION intersect_array AS 'brickhouse.udf.collect.ArrayInters
 
 CREATE TEMPORARY FUNCTION array_flatten AS 'brickhouse.udf.collect.ArrayFlattenUDF';
 CREATE TEMPORARY FUNCTION collect AS 'brickhouse.udf.collect.CollectUDAF';
+CREATE TEMPORARY FUNCTION collect_distinct AS 'brickhouse.udf.collect.CollectDistinctUDAF';
 
 CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF';
 CREATE TEMPORARY FUNCTION collect_merge_max AS 'brickhouse.udf.collect.CollectMergeMaxUDAF';
