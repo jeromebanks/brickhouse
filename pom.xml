@@ -41,7 +41,7 @@
 	<properties>
 	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <apache.hadoop.version>2.4.0</apache.hadoop.version>
-        <apache.hbase.version>0.98.0-hadoop2</apache.hbase.version>
+        <apache.hbase.version>0.98.24-hadoop2</apache.hbase.version>
         <apache.hive.version>0.13.0</apache.hive.version>
         <skipTests>true</skipTests>
 	</properties>
