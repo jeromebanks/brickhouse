@@ -126,7 +126,7 @@ under the License.
       <password>arti-JUMPsh0t-facts</password>
     </server>
     <server>
-      <ids>snapshots</id>
+      <id>snapshots</id>
       <username>Jumpshot-artifacts</username>
       <password>arti-JUMPsh0t-facts</password>
     </server>
