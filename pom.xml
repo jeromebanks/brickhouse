@@ -4,7 +4,7 @@
 
 	<groupId>com.klout</groupId>
 	<artifactId>brickhouse</artifactId>
-	<version>0.7.17-SF-SNAPSHOT</version>
+	<version>0.7.18-JS</version>
 	<packaging>jar</packaging>
 	<name>Brickhouse</name>
 	<description>Extensions of Hive for the Data Developer</description>
@@ -259,33 +259,18 @@
   -->
 
 
-<!--
   <distributionManagement>
       <repository>
 	   <id>central</id>
 	    <name>maven-repo-releases</name>
-	    <url>http://maven.klout:8081/artifactory/libs-release-local</url>
+	    <url>https://artifactory.srv.int.avast.com/artifactory/maven</url>
 	  </repository>
 	 <snapshotRepository>
        <id>snapshots</id>
 	   <name>maven-repo-snapshots</name>
-	   <url>http://maven.klout:8081/artifactory/libs-snapshot-local</url>
+	   <url>https://artifactory.srv.int.avast.com/artifactory/maven-snapshot</url>
      </snapshotRepository>
   </distributionManagement>
--->
-
-	<distributionManagement>
-		<repository>
-			<id>releases</id>
-			<name>StitchFix snapshots</name>
-			<url>http://artifactory.vertigo.stitchfix.com/artifactory/repositories/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>snapshots</id>
-			<url>http://artifactory.vertigo.stitchfix.com/artifactory/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
-
 
 
 
