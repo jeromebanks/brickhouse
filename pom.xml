@@ -274,7 +274,7 @@
 	   <id>central</id>
 	    <name>maven-repo-releases</name>
 	    <url>https://artifactory.srv.int.avast.com/artifactory/maven</url>
-	  </repository>
+      </repository>
 	 <snapshotRepository>
        <id>snapshots</id>
 	   <name>maven-repo-snapshots</name>
