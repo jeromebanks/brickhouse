@@ -38,6 +38,16 @@
 		</developer>
 	</developers>
 
+
+  <repositories>
+    <repository>
+      <id>apache-releases</id>
+        <url>https://repository.apache.org/content/groups/public</url>
+    </repository>
+  </repositories>
+
+
+
 	<properties>
 	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <apache.hadoop.version>2.4.0</apache.hadoop.version>
