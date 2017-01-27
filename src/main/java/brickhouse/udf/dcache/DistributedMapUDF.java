@@ -97,6 +97,7 @@ public class DistributedMapUDF extends GenericUDF {
 			serde = new LazySimpleSerDe();
 			Configuration job = new Configuration();
 			Properties tbl =new Properties();
+                        tbl.setProperty("serialization.format", ",");
 			tbl.setProperty("columns", "key,value");
 			tbl.setProperty("columns.types", keyType.getTypeName() +"," + valType.getTypeName());
 			serde.initialize(job, tbl);
