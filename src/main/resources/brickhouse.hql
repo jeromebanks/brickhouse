@@ -11,6 +11,7 @@ CREATE TEMPORARY FUNCTION collect_max AS 'brickhouse.udf.collect.CollectMaxUDAF'
 CREATE TEMPORARY FUNCTION collect_merge_max AS 'brickhouse.udf.collect.CollectMergeMaxUDAF';
 CREATE TEMPORARY FUNCTION collect_capped AS 'brickhouse.udf.collect.CollectCappedUDAF';
 CREATE TEMPORARY FUNCTION cast_array AS 'brickhouse.udf.collect.CastArrayUDF';
+CREATE TEMPORARY FUNCTION empty_array AS 'brickhouse.udf.collect.EmptyArrayUDF';
 CREATE TEMPORARY FUNCTION cast_map AS 'brickhouse.udf.collect.CastMapUDF';
 CREATE TEMPORARY FUNCTION combine AS 'brickhouse.udf.collect.CombineUDF';
 CREATE TEMPORARY FUNCTION combine_unique AS 'brickhouse.udf.collect.CombineUniqueUDAF';
@@ -57,7 +58,7 @@ CREATE TEMPORARY FUNCTION set_similarity AS 'brickhouse.udf.sketch.SetSimilarity
 CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF';
 CREATE TEMPORARY FUNCTION sketch_hashes AS 'brickhouse.udf.sketch.SketchHashesUDF';
 CREATE TEMPORARY FUNCTION union_sketch AS 'brickhouse.udf.sketch.UnionSketchSetUDAF';
-CREATE TEMPORARY FUNCTION multiday_count AS 'brickhouse.udf.sketch.MultiDaySketcherUDAF';
+CREATE TEMPORARY FUNCTION multiday_sketch AS 'brickhouse.udf.sketch.MultiDaySketcherUDAF';
 
 CREATE TEMPORARY FUNCTION moving_avg AS 'brickhouse.udf.timeseries.MovingAvgUDF';
 CREATE TEMPORARY FUNCTION sum_array AS 'brickhouse.udf.timeseries.SumArrayUDF';
