@@ -9,41 +9,43 @@ import java.util.ArrayList;
  */
 public class GetYPathValueUDF extends UDF {
     public String evaluate( String ypathPrefix, String xunit) {
-        String[] ypaths = xunit.split(",");
+        if( ! xunit.equals("/G")) {
+            String[] ypaths = xunit.split(",");
 
-        for (int i = 0; i < ypaths.length; ++i) {
+            for (int i = 0; i < ypaths.length; ++i) {
 
-            String ypath = ypaths[i];
-            if (ypath.startsWith("/" + ypathPrefix)) {
+                String ypath = ypaths[i];
+                if (ypath.startsWith("/" + ypathPrefix)) {
 
-                String nvpair = ypath.substring(ypath.indexOf("/", 1) + 1);
+                    String nvpair = ypath.substring(ypath.indexOf("/", 1) + 1);
 
-                if ("category".equals(ypathPrefix)) {
-                    if (nvpair.contains("/")) {
-                        String[] categoryLevels = nvpair.split("/");
+                    if ("category".equals(ypathPrefix)) {
+                        if (nvpair.contains("/")) {
+                            String[] categoryLevels = nvpair.split("/");
 
-                        String categoryTree = "";
-                        for(String level : categoryLevels ) {
+                            String categoryTree = "";
+                            for (String level : categoryLevels) {
 
-                            if (level.contains("=")) {
-                                String[] nvpairSplit = level.split("=");
+                                if (level.contains("=")) {
+                                    String[] nvpairSplit = level.split("=");
 
-                                if (categoryTree.isEmpty()) {
-                                    categoryTree = categoryTree + nvpairSplit[1];
-                                } else {
-                                    categoryTree = categoryTree + " > " + nvpairSplit[1];
+                                    if (categoryTree.isEmpty()) {
+                                        categoryTree = categoryTree + nvpairSplit[1];
+                                    } else {
+                                        categoryTree = categoryTree + " > " + nvpairSplit[1];
+                                    }
                                 }
                             }
+                            return categoryTree.replaceAll("_", ",");
                         }
-                        return categoryTree.replaceAll("_", ",");
+                    } else {
+                        if (nvpair.contains("=")) {
+                            String[] nvpairSplit = nvpair.split("=");
+                            return nvpairSplit[1].replaceAll("_", ",");
+                        }
                     }
-                } else {
-                    if (nvpair.contains("=")) {
-                        String[] nvpairSplit = nvpair.split("=");
-                        return nvpairSplit[1].replaceAll("_", ",");
-                    }
-                }
 
+                }
             }
         }
         return null;
