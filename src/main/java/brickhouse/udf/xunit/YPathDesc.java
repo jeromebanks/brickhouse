@@ -1,5 +1,8 @@
 package brickhouse.udf.xunit;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class YPathDesc {
 	private String _dimName;
     private String[] _attrNames;
@@ -18,6 +21,12 @@ public class YPathDesc {
 	
 	public int numLevels() { return _attrNames.length; }
 
+	public boolean isGlobal() {
+	   return _dimName == "G" && _attrNames.length == 0;
+	}
+
+	public String getDimName() { return _dimName; }
+
 	public YPathDesc addAttribute( String attrName, String attrValue) {
 		String[] newAttrNames = new String[ _attrNames.length + 1];
 		String[] newAttrValues = new String[ _attrValues.length + 1];
@@ -29,7 +38,19 @@ public class YPathDesc {
 		newAttrValues[ _attrNames.length] = attrValue;
 	    return new YPathDesc( _dimName, newAttrNames, newAttrValues);
 	}
-    
+
+	public String getAttributeValue( String attrName) {
+		for(int i=0; i<_attrNames.length; ++i) {
+			if( _attrNames[i].equals( attrName)) {
+			  return _attrValues[i];
+			}
+		}
+		return null;
+	}
+
+	public String[] getAttributeNames()  { return _attrNames;  }
+	public String[] getAttributeValues() { return _attrValues; }
+
     public String toString() {
        StringBuilder sb = new StringBuilder("/");	
        sb.append( _dimName);
@@ -41,5 +62,34 @@ public class YPathDesc {
        }
        return sb.toString();
     }
-    
+
+    static public YPathDesc GlobalYPath = new YPathDesc("G");
+
+
+    static public YPathDesc ParseYPath( String ypathStr) throws IllegalArgumentException {
+       if( ypathStr.startsWith("/")) {
+         String[] splitAttrs = ypathStr.substring(1).split("/");
+		 String ypDim = splitAttrs[0];
+         if(splitAttrs.length > 1) {
+			 ArrayList<String> attrNames = new ArrayList<String>();
+			 ArrayList<String> attrValues = new ArrayList<String>();
+			 for (int i = 1; i < splitAttrs.length - 1; ++i) {
+				 String[] kvArr = splitAttrs[i].split("=");
+				 if (kvArr.length != 2) {
+					 throw new IllegalArgumentException(" Invalid YPath "  + ypathStr);
+				 }
+				 attrNames.add( kvArr[0]);
+				 attrNames.add( kvArr[1]);
+			 }
+			 return new YPathDesc( ypDim, attrNames.toArray( new String[attrNames.size()]), attrValues.toArray( new String[attrValues.size()]));
+		 } else {
+           if( ! ypDim.equals("G") ) {
+			   throw new IllegalArgumentException(" Invalid YPath "  + ypathStr);
+		   }
+		   return GlobalYPath;
+		 }
+	   } else {
+       	  throw new IllegalArgumentException(" Invalid YPath " + ypathStr + " ; YPaths must start with / ");
+	   }
+	}
 }
