@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -19,6 +20,10 @@ import java.util.List;
  *     the YPath dimensions
  *
  */
+@Description(
+        name = "get_all_yp_dims",
+        value = "return all the dimensions in an XUnit as an array<string>"
+)
 public class GetAllYPDimsUDF extends GenericUDF {
     ObjectInspector xunitInspector  = null;
 
@@ -37,7 +42,11 @@ public class GetAllYPDimsUDF extends GenericUDF {
 
     @Override
     public Object evaluate(DeferredObject[] deferredObjects) throws HiveException {
-        XUnitDesc xunit = XUnitUtils.InspectXUnit( deferredObjects[0], xunitInspector);
+        XUnitDesc xunit = XUnitUtils.InspectXUnit( deferredObjects[0].get(), xunitInspector);
+        if( xunit == null) {
+            return null;
+        }
+        System.out.println("  INSPECTED XUNIT = " + xunit.toString());
         List<String> ypDims = new ArrayList<String>();
         for( YPathDesc yp : xunit.getYPaths()) {
            ypDims.add( yp.getDimName());

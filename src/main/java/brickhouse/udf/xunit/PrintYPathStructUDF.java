@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -16,6 +17,10 @@ import java.util.List;
  *   of a named_struct representation of a YPath
  *
  */
+@Description(
+        name = "get_num_yp_dims",
+        value = "return the number of YPath dimensions in an XUnit"
+)
 public class PrintYPathStructUDF extends GenericUDF {
     StructObjectInspector ypathStructInspector;
 

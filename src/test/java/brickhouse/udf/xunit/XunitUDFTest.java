@@ -28,4 +28,23 @@ public class XunitUDFTest {
 
 
     }
+
+    @Test
+    public void testParseXUnit() {
+        String xunitStr =  "/age/bucket=18-24,/domain/domain=mercadolibre.cl,/product/id=452597691";
+
+        XUnitDesc xunit = XUnitDesc.ParseXUnit( xunitStr);
+
+        for(YPathDesc yp : xunit.getYPaths()) {
+           System.out.println(" YP = " + yp) ;
+           System.out.println(" YP DIM = " + yp.getDimName() + " NUM ATTR "  + yp.getAttributeNames().length);
+           for(int i = 0; i< yp.getAttributeNames().length; ++i) {
+              System.out.println(" ATTR " +yp.getAttributeNames()[i] + " = " + yp.getAttributeValues()[i]) ;
+           }
+        }
+
+
+        System.out.println(" XUNIT = " + xunit);
+    }
+
 }

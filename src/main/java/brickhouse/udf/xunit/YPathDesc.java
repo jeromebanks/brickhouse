@@ -21,10 +21,6 @@ public class YPathDesc {
 	
 	public int numLevels() { return _attrNames.length; }
 
-	public boolean isGlobal() {
-	   return _dimName == "G" && _attrNames.length == 0;
-	}
-
 	public String getDimName() { return _dimName; }
 
 	public YPathDesc addAttribute( String attrName, String attrValue) {
@@ -51,6 +47,9 @@ public class YPathDesc {
 	public String[] getAttributeNames()  { return _attrNames;  }
 	public String[] getAttributeValues() { return _attrValues; }
 
+	public int numAttributes() { return _attrNames.length; }
+
+
     public String toString() {
        StringBuilder sb = new StringBuilder("/");	
        sb.append( _dimName);
@@ -58,12 +57,10 @@ public class YPathDesc {
     	  sb.append('/');
     	  sb.append(_attrNames[i]);
     	  sb.append('=');
-    	  sb.append(_attrValues[i]);
+    	  sb.append(_attrValues[i]); //// XXX Convert slashes and commas
        }
        return sb.toString();
     }
-
-    static public YPathDesc GlobalYPath = new YPathDesc("G");
 
 
     static public YPathDesc ParseYPath( String ypathStr) throws IllegalArgumentException {
@@ -73,21 +70,18 @@ public class YPathDesc {
          if(splitAttrs.length > 1) {
 			 ArrayList<String> attrNames = new ArrayList<String>();
 			 ArrayList<String> attrValues = new ArrayList<String>();
-			 for (int i = 1; i < splitAttrs.length - 1; ++i) {
+			 for (int i = 1; i <= splitAttrs.length - 1; ++i) {
 				 String[] kvArr = splitAttrs[i].split("=");
 				 if (kvArr.length != 2) {
 					 throw new IllegalArgumentException(" Invalid YPath "  + ypathStr);
 				 }
 				 attrNames.add( kvArr[0]);
-				 attrNames.add( kvArr[1]);
+				 attrValues.add( kvArr[1]);
 			 }
 			 return new YPathDesc( ypDim, attrNames.toArray( new String[attrNames.size()]), attrValues.toArray( new String[attrValues.size()]));
 		 } else {
-           if( ! ypDim.equals("G") ) {
-			   throw new IllegalArgumentException(" Invalid YPath "  + ypathStr);
-		   }
-		   return GlobalYPath;
-		 }
+            throw new IllegalArgumentException(" Invalid YPath " + ypathStr + " ; YPaths must have attribute names and values ");
+         }
 	   } else {
        	  throw new IllegalArgumentException(" Invalid YPath " + ypathStr + " ; YPaths must start with / ");
 	   }

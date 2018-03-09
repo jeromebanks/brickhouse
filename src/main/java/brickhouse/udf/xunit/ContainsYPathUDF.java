@@ -1,7 +1,6 @@
 package brickhouse.udf.xunit;
 
 import org.apache.hadoop.hive.ql.exec.Description;
-import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -14,20 +13,18 @@ import java.util.List;
 
 /**
  *
- * Return true only if the given XUnit has
- *   a specified set of dimensions,
- *   ( and only those dimensions )
+ * Return true only if the given XUnit
+ * contains a specified YPath value
  *
  */
 @Description(
-        name="contains_only_yp_dims",
-        value="return true if and only if the xunit contains only the specified dimensions")
-public class WithDimensionsUDF extends GenericUDF {
+        name="contains_ypath",
+        value="return true if and only if the xunit contains the specified YPath. ")
+public class ContainsYPathUDF extends GenericUDF {
     ObjectInspector xunitInspector = null;
-    ListObjectInspector dimsInspector = null;
-    StringObjectInspector dimInspector = null;
+    ObjectInspector ypathInspector = null;
 
-    String usage = "contains_only_yp_dims takes an XUnit and a array of YPath dimensions ( and only those dimensions).";
+    String usage = "contains_ypath takes an XUnit and a YPath as arguments.";
 
     @Override
     public ObjectInspector initialize(ObjectInspector[] objectInspectors) throws UDFArgumentException {
@@ -38,11 +35,7 @@ public class WithDimensionsUDF extends GenericUDF {
         if( objectInspectors[1].getCategory() != ObjectInspector.Category.LIST) {
             throw new UDFArgumentException(usage);
         }
-        dimsInspector = (ListObjectInspector)objectInspectors[1];
-        if( !(dimsInspector.getListElementObjectInspector() instanceof StringObjectInspector) ) {
-            throw new UDFArgumentException(usage);
-        }
-        dimInspector = (StringObjectInspector)dimsInspector.getListElementObjectInspector();
+        ypathInspector = XUnitUtils.ValidateYPathObjectInspector(objectInspectors[1], usage);
 
 
         return PrimitiveObjectInspectorFactory.javaBooleanObjectInspector;
@@ -56,14 +49,27 @@ public class WithDimensionsUDF extends GenericUDF {
             return false;
         }
 
-        List<String> dims = XUnitUtils.InspectStringList( deferredObjects[1].get(), dimsInspector);
-
-        if( xunit.numDims() != dims.size() ) {
+        YPathDesc ypath = XUnitUtils.InspectYPath( deferredObjects[1].get(), ypathInspector);
+        YPathDesc checkYPath = xunit.getYPath( ypath.getDimName());
+        if( checkYPath == null) {
             return false;
         }
 
-        for( YPathDesc yp : xunit.getYPaths()) {
-            if( ! dims.contains( yp.getDimName())) {
+        if( ypath.getAttributeNames().length != checkYPath.getAttributeNames().length) {
+            return false;
+        }
+        for(int i=0; i< ypath.getAttributeNames().length -1; ++i) {
+            String attrName = ypath.getAttributeNames()[i];
+            String checkAttrName = checkYPath.getAttributeNames()[i];
+
+            if( !checkAttrName.equals( attrName)) {
+                return false;
+            }
+
+            String attrValue = ypath.getAttributeValues()[i];
+            String checkAttrValue = checkYPath.getAttributeValues()[i];
+
+            if( !checkAttrValue.equals( attrValue)) {
                 return false;
             }
         }
@@ -74,6 +80,6 @@ public class WithDimensionsUDF extends GenericUDF {
 
     @Override
     public String getDisplayString(String[] strings) {
-        return XUnitUtils.DisplayString("contains_only_yp_dims", strings);
+        return XUnitUtils.DisplayString("contains_ypath", strings);
     }
 }

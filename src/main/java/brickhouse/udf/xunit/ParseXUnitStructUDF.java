@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -17,20 +18,24 @@ import java.util.ArrayList;
  *    representing the YPath
  *
  */
+@Description(
+        name = "parse_xunit_string",
+        value = "return the number of YPath dimensions in an XUnit"
+)
 public class ParseXUnitStructUDF extends GenericUDF {
     ObjectInspector xunitInspector;
 
-    String usage = ("xunit_struct takes an XUnit String as an argument.");
+    String usage = ("parse_xunit_string takes an XUnit String as an argument.");
 
     @Override
     public ObjectInspector initialize(ObjectInspector[] objectInspectors) throws UDFArgumentException {
         if( objectInspectors.length != 1) {
-            throw new UDFArgumentException("xunit_struct takes an XUnit String as an argument.");
+            throw new UDFArgumentException(usage);
         }
         xunitInspector = XUnitUtils.ValidateXUnitObjectInspector( objectInspectors[0], usage);
 
         if(!(objectInspectors[0] instanceof StringObjectInspector )) {
-            throw new UDFArgumentException("xunit_struct takes an XUnit String as an argument.");
+            throw new UDFArgumentException(usage);
         }
 
 
@@ -41,13 +46,14 @@ public class ParseXUnitStructUDF extends GenericUDF {
     @Override
     public Object evaluate(DeferredObject[] deferredObjects) throws HiveException {
         XUnitDesc xunit = XUnitUtils.InspectXUnit( deferredObjects[0].get(), xunitInspector);
+        System.out.println(" XUNIT = " + xunit.toString() );
 
         return XUnitUtils.StructObjectForXUnit( xunit);
     }
 
     @Override
     public String getDisplayString(String[] strings) {
-        return XUnitUtils.DisplayString("parse_xunit_struct", strings);
+        return XUnitUtils.DisplayString("parse_xunit_string", strings);
     }
 
 }

@@ -33,13 +33,17 @@ public final class XUnitUtils {
     static public XUnitDesc InspectXUnit(Object o, ObjectInspector inspector) throws HiveException {
         if( inspector instanceof StringObjectInspector) {
            String xunitStr = ((StringObjectInspector)((StringObjectInspector) inspector)).getPrimitiveJavaObject(o);
+           System.out.println(" INSPECT - PARSING XUNIT " + xunitStr);
            XUnitDesc xunit = XUnitDesc.ParseXUnit( xunitStr) ;
+            System.out.println(" INSPECT - PARSING XUNIT NUM DIMS  " + xunit.numDims());
+            System.out.println(" INSPECT - PARSING XUNIT " + xunit.toString());
            return xunit;
         } else if( inspector instanceof StructObjectInspector) {
             StructObjectInspector xunitStructInspector = (StructObjectInspector) inspector;
 
             StructField isGlobalSF = xunitStructInspector.getStructFieldRef("is_global");
             boolean isGlobal = ((BooleanObjectInspector) isGlobalSF.getFieldObjectInspector()).get( xunitStructInspector.getStructFieldData(o, isGlobalSF));
+            System.out.println(" INSPECT - OBJ  " + o + " STRUCT FIELD IS GLOBAL   " + isGlobal);
             if( isGlobal) {
                 return XUnitDesc.GlobalXUnit;
             } else {
@@ -71,7 +75,7 @@ public final class XUnitUtils {
         //// Make sure names are there
         if( inspector.getCategory() == ObjectInspector.Category.STRUCT) {
             StructObjectInspector xunitStructInspector = (StructObjectInspector)inspector;
-            if (xunitStructInspector.getStructFieldRef("is__global") == null
+            if (xunitStructInspector.getStructFieldRef("is_global") == null
                     || xunitStructInspector.getStructFieldRef("ypaths") == null) {
                 throw new UDFArgumentException(errorMessage);
             }
@@ -96,6 +100,9 @@ public final class XUnitUtils {
      * @return
      */
     static public Object StructObjectForXUnit( XUnitDesc xunit) {
+        if(xunit == null) {
+            return null;
+        }
         if( xunit.isGlobal()) {
             /// The Global XUnit has no attributes
             return new Object[] {
@@ -105,7 +112,7 @@ public final class XUnitUtils {
         } else {
             Object[] attrObjects = new Object[ xunit.getYPaths().length ];
             for( int i=0; i<attrObjects.length; ++i) {
-                attrObjects[i] = StructObjectForYPath(xunit.getYPaths()[0] );
+                attrObjects[i] = StructObjectForYPath(xunit.getYPaths()[i] );
             }
             return new Object[] {
                     false,
@@ -118,16 +125,20 @@ public final class XUnitUtils {
     /**
      *  Translate the YPathDesc to an Object
      *   which can be returned from a GenericeUDF
-     *    which can be interpreted as a valid YPath
+     *   which can be interpreted as a valid YPath
+     *
      * @param ypath
      *
      * **/
     static public Object StructObjectForYPath( YPathDesc ypath) {
+        if(ypath == null) {
+            return ypath;
+        }
 
         Object[] attributes = new Object[ypath.numLevels()];
         String[] attrNames = ypath.getAttributeNames();
         String[] attrValues = ypath.getAttributeValues();
-        for(int i=0; i< attributes.length; ++i) {
+        for(int i=0; i<= attributes.length -1; ++i) {
             attributes[i]  =  new Object[] { attrNames[i], attrValues[i] };
         }
 
@@ -207,9 +218,10 @@ public final class XUnitUtils {
         attrFieldInspectors.add( PrimitiveObjectInspectorFactory.javaStringObjectInspector);
 
         ObjectInspector attrInspector = ObjectInspectorFactory.getStandardStructObjectInspector(attrFieldNames, attrFieldInspectors);
+        ListObjectInspector attrListInspector = ObjectInspectorFactory.getStandardListObjectInspector( attrInspector);
 
         ypathFieldsNames.add("attributes");
-        ypathFieldInspectors.add( attrInspector);
+        ypathFieldInspectors.add( attrListInspector);
 
         return ObjectInspectorFactory.getStandardStructObjectInspector(ypathFieldsNames, ypathFieldInspectors);
     }
@@ -230,6 +242,17 @@ public final class XUnitUtils {
 
 
         return ObjectInspectorFactory.getStandardStructObjectInspector(xunitFieldNames,xunitFieldInspectors);
+    }
+
+
+    /**
+     *  Consolidate the logic for getting a List of Strings from a GenericUDF Object
+     * @param o
+     * @param listInspector
+     * @return
+     */
+    public static List<String> InspectStringList( Object o, ListObjectInspector listInspector) {
+        return (List<String>)listInspector.getList( o);
     }
 
 

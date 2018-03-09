@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -11,6 +12,10 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspe
  * Append a YPath to an XUnit
  *
  */
+@Description(
+        name = "append_ypath",
+        value = "append a YPath to a given XUnit"
+)
 public class AppendYPathUDF extends GenericUDF {
     ObjectInspector xunitInspector = null;
     ObjectInspector ypathInspector = null;

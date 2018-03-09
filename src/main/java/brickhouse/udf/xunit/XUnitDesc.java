@@ -37,11 +37,10 @@ public class XUnitDesc {
 	public YPathDesc[] getYPaths() { return _ypaths; }
 
 	public boolean isGlobal() {
-		if(_ypaths.length == 1) {
-		  return _ypaths[0].isGlobal();
-		} else {
-			return false;
-		}
+	    if( _ypaths.length ==0) {
+	        return true;
+        }
+		return false;
 	}
 
 	public boolean containsDim( String ypDim) {
@@ -51,6 +50,16 @@ public class XUnitDesc {
 			}
 		}
 		return false;
+	}
+
+
+	public YPathDesc getYPath( String ypDim) {
+		for(YPathDesc ypd : _ypaths) {
+			if( ypd.getDimName().equals( ypDim)) {
+				return ypd;
+			}
+		}
+		return null;
 	}
 
 
@@ -95,17 +104,26 @@ public class XUnitDesc {
 
 	
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append( _ypaths[0].toString() );
-		for(int i=1; i<_ypaths.length; ++i) {
-	       sb.append(',');
-	       sb.append( _ypaths[i].toString() );
-		}
-		return sb.toString();
+	    if( isGlobal()) {
+	        return GlobalXUnitString;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(_ypaths[0].toString());
+            for (int i = 1; i < _ypaths.length; ++i) {
+                sb.append(',');
+                YPathDesc yp = _ypaths[i];
+                if(yp != null) {
+                    sb.append(_ypaths[i].toString());
+                } else {
+                    sb.append("null");/// XXX TODO shouldn't be the case
+                }
+            }
+            return sb.toString();
+        }
 	}
 
-	public static XUnitDesc GlobalXUnit = new XUnitDesc( YPathDesc.GlobalYPath);
-	public static String GlobalXUnitString = GlobalXUnit.toString();
+	public static XUnitDesc GlobalXUnit = new XUnitDesc( new YPathDesc[] { } );
+	public static String GlobalXUnitString = "/G";
 
 	static public XUnitDesc ParseXUnit( String xunitStr) throws IllegalArgumentException {
 	    if( xunitStr.equals("/G")) {
@@ -113,8 +131,9 @@ public class XUnitDesc {
 		} else {
 	      String[] ypathStrArr = xunitStr.split(",");
 	      YPathDesc[] ypathArr = new YPathDesc[ypathStrArr.length];
-	      for(int i=0; i<ypathStrArr.length -1; ++i) {
+	      for(int i=0; i<=ypathStrArr.length -1; ++i) {
 	      	ypathArr[i] = YPathDesc.ParseYPath( ypathStrArr[i]);
+	      	System.out.println(" PARSE " + ypathStrArr[i] + " == " + ypathArr[i]);
 		  }
 		  return new XUnitDesc(ypathArr);
 		}

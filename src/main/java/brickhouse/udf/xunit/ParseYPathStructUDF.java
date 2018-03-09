@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -17,13 +18,17 @@ import java.util.List;
  *   struct<dim:string,attributes:array<struct<attribute_name:string,attribute_value:string>>>
  *
  */
+@Description(
+        name = "parse_ypath_string",
+        value = "return the number of YPath dimensions in an XUnit"
+)
 public class ParseYPathStructUDF extends GenericUDF {
     StringObjectInspector ypathStrInspector = null;
 
     @Override
     public ObjectInspector initialize(ObjectInspector[] objectInspectors) throws UDFArgumentException {
         if( objectInspectors.length != 1 || !(objectInspectors[0] instanceof StringObjectInspector)) {
-           throw new UDFArgumentException("parse_ypath_struct takes a String as an argument");
+           throw new UDFArgumentException("parse_ypath_string takes a String as an argument");
         }
         ypathStrInspector = (StringObjectInspector)objectInspectors[0];
 
@@ -42,8 +47,7 @@ public class ParseYPathStructUDF extends GenericUDF {
 
     @Override
     public String getDisplayString(String[] strings) {
-        return XUnitUtils.DisplayString("parse_ypath_struct", strings);
+        return XUnitUtils.DisplayString("parse_ypath_string", strings);
     }
-
 
 }

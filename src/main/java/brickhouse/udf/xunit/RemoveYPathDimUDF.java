@@ -1,15 +1,11 @@
 package brickhouse.udf.xunit;
 
 import org.apache.hadoop.hive.ql.exec.Description;
-import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *  Return an XUnit with a specific 
@@ -20,7 +16,7 @@ import java.util.List;
 		name = "remove_yp_dim",
 		value = "return an XUnit with a YPath given dimension removed"
 )
-public class RemoveYPathUDF extends GenericUDF {
+public class RemoveYPathDimUDF extends GenericUDF {
     ObjectInspector xunitInspector = null;
     StringObjectInspector ypDimInspector = null;
 

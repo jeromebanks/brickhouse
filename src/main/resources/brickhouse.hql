@@ -107,3 +107,20 @@ CREATE TEMPORARY FUNCTION get_ypath AS 'brickhouse.udf.xunit.GetYPathUDF';
 CREATE TEMPORARY FUNCTION remove_ypath AS 'brickhouse.udf.xunit.RemoveYPathUDF';
 CREATE TEMPORARY FUNCTION getsegments AS 'brickhouse.udf.xunit.GetYPathSegmentsUDF';
 
+
+CREATE TEMPORARY FUNCTION append_ypath AS 'brickhouse.udf.xunit.AppendYPathUDF';
+CREATE TEMPORARY FUNCTION get_all_yp_dims AS 'brickhouse.udf.xunit.GetAllYPDimsUDF';
+CREATE TEMPORARY FUNCTION get_num_yp_dims AS 'brickhouse.udf.xunit.GetNumDimensionsUDF';
+CREATE TEMPORARY FUNCTION get_ypath_attribute AS 'brickhouse.udf.xunit.GetYPathAttributeUDF';
+CREATE TEMPORARY FUNCTION get_ypath_struct AS 'brickhouse.udf.xunit.GetYPathStructUDF';
+CREATE TEMPORARY FUNCTION is_global_xunit AS 'brickhouse.udf.xunit.IsGlobalXUnitUDF';
+CREATE TEMPORARY FUNCTION parse_xunit_string AS 'brickhouse.udf.xunit.ParseXUnitStructUDF';
+CREATE TEMPORARY FUNCTION parse_ypath_string AS 'brickhouse.udf.xunit.ParseYPathStructUDF';
+CREATE TEMPORARY FUNCTION print_xunit_struct AS 'brickhouse.udf.xunit.PrintXUnitStructUDF';
+CREATE TEMPORARY FUNCTION print_ypath_struct AS 'brickhouse.udf.xunit.PrintYPathStructUDF';
+CREATE TEMPORARY FUNCTION remove_yp_dim AS 'brickhouse.udf.xunit.RemoveYPathDimUDF';
+CREATE TEMPORARY FUNCTION contains_only_yp_dims AS 'brickhouse.udf.xunit.WithDimensionsUDF';
+CREATE TEMPORARY FUNCTION contains_ypath AS 'brickhouse.udf.xunit.ContainsYPathUDF';
+
+
+

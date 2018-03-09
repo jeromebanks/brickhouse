@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
@@ -16,6 +17,10 @@ import java.util.List;
  *    representing the YPath
  *
  */
+@Description(
+        name = "print_xunit_struct",
+        value = "return the string represention of an XUnit named_struct"
+)
 public class PrintXUnitStructUDF extends GenericUDF {
     StructObjectInspector xunitStructInspector;
 

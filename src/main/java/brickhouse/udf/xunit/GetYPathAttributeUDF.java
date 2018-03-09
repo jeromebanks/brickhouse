@@ -1,5 +1,6 @@
 package brickhouse.udf.xunit;
 
+import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -14,6 +15,10 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspe
  *    within an  XUnit
  *   Takes in either an XUnit string, or named_struct
  */
+@Description(
+        name = "get_ypath_attribute",
+        value = "returns a YPath attribute value from an XUnit"
+)
 public class GetYPathAttributeUDF extends GenericUDF {
     ObjectInspector xunitInspector = null;
     StringObjectInspector ypDimInspector = null;
