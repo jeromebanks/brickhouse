@@ -28,7 +28,7 @@ public class GetYPathAttributeUDF extends GenericUDF {
     @Override
     public ObjectInspector initialize(ObjectInspector[] objectInspectors) throws UDFArgumentException {
         String usage = "get_ypath_attribute takes three arguments, an XUnit, a YPath dimension, and a YPath attribute";
-        if( objectInspectors.length != 3 || objectInspectors.length != 2) {
+        if( objectInspectors.length != 3 && objectInspectors.length != 2) {
             throw new UDFArgumentException(usage);
         }
         xunitInspector = XUnitUtils.ValidateXUnitObjectInspector( objectInspectors[0], usage);

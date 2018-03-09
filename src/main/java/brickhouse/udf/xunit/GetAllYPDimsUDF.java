@@ -46,7 +46,6 @@ public class GetAllYPDimsUDF extends GenericUDF {
         if( xunit == null) {
             return null;
         }
-        System.out.println("  INSPECTED XUNIT = " + xunit.toString());
         List<String> ypDims = new ArrayList<String>();
         for( YPathDesc yp : xunit.getYPaths()) {
            ypDims.add( yp.getDimName());

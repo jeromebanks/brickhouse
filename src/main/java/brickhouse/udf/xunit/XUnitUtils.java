@@ -33,17 +33,13 @@ public final class XUnitUtils {
     static public XUnitDesc InspectXUnit(Object o, ObjectInspector inspector) throws HiveException {
         if( inspector instanceof StringObjectInspector) {
            String xunitStr = ((StringObjectInspector)((StringObjectInspector) inspector)).getPrimitiveJavaObject(o);
-           System.out.println(" INSPECT - PARSING XUNIT " + xunitStr);
            XUnitDesc xunit = XUnitDesc.ParseXUnit( xunitStr) ;
-            System.out.println(" INSPECT - PARSING XUNIT NUM DIMS  " + xunit.numDims());
-            System.out.println(" INSPECT - PARSING XUNIT " + xunit.toString());
            return xunit;
         } else if( inspector instanceof StructObjectInspector) {
             StructObjectInspector xunitStructInspector = (StructObjectInspector) inspector;
 
             StructField isGlobalSF = xunitStructInspector.getStructFieldRef("is_global");
             boolean isGlobal = ((BooleanObjectInspector) isGlobalSF.getFieldObjectInspector()).get( xunitStructInspector.getStructFieldData(o, isGlobalSF));
-            System.out.println(" INSPECT - OBJ  " + o + " STRUCT FIELD IS GLOBAL   " + isGlobal);
             if( isGlobal) {
                 return XUnitDesc.GlobalXUnit;
             } else {
@@ -252,7 +248,17 @@ public final class XUnitUtils {
      * @return
      */
     public static List<String> InspectStringList( Object o, ListObjectInspector listInspector) {
-        return (List<String>)listInspector.getList( o);
+        //// Need to translate
+        StringObjectInspector stringInspector = (StringObjectInspector)listInspector.getListElementObjectInspector();
+        ArrayList<String> retVal = new ArrayList<String>();
+        int len = listInspector.getListLength( o);
+        for( int i = 0; i<= len -1; ++i) {
+            Object strObj = listInspector.getListElement( o, i);
+            String  str = stringInspector.getPrimitiveJavaObject( strObj);
+            retVal.add( str);
+        }
+
+        return retVal;
     }
 
 

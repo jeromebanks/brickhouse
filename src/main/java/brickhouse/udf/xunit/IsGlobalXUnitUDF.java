@@ -16,7 +16,11 @@ public class IsGlobalXUnitUDF extends UDF {
        //// Simply do a string compare
        ///   instead of parsing the YPath,
        ///  for efficiency sake
-       return xunitStr.equals( XUnitDesc.GlobalXUnitString);
+        if(xunitStr != null) {
+            return xunitStr.equals(XUnitDesc.GlobalXUnitString);
+        } else {
+            return null;
+        }
     }
 
 }

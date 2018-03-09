@@ -133,7 +133,6 @@ public class XUnitDesc {
 	      YPathDesc[] ypathArr = new YPathDesc[ypathStrArr.length];
 	      for(int i=0; i<=ypathStrArr.length -1; ++i) {
 	      	ypathArr[i] = YPathDesc.ParseYPath( ypathStrArr[i]);
-	      	System.out.println(" PARSE " + ypathStrArr[i] + " == " + ypathArr[i]);
 		  }
 		  return new XUnitDesc(ypathArr);
 		}
