@@ -130,11 +130,15 @@ public class XUnitDesc {
 	        return GlobalXUnit;
 		} else {
 	      String[] ypathStrArr = xunitStr.split(",");
-	      YPathDesc[] ypathArr = new YPathDesc[ypathStrArr.length];
-	      for(int i=0; i<=ypathStrArr.length -1; ++i) {
-	      	ypathArr[i] = YPathDesc.ParseYPath( ypathStrArr[i]);
+	      if( ypathStrArr.length >  0) {
+			  YPathDesc[] ypathArr = new YPathDesc[ypathStrArr.length];
+			  for (int i = 0; i <= ypathStrArr.length - 1; ++i) {
+				  ypathArr[i] = YPathDesc.ParseYPath(ypathStrArr[i]);
+			  }
+			  return new XUnitDesc(ypathArr);
+		  } else {
+	      	throw  new IllegalArgumentException( xunitStr + " is not a valid XUnit");
 		  }
-		  return new XUnitDesc(ypathArr);
 		}
 	}
 }

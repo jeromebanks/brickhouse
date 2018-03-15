@@ -5,8 +5,13 @@ import org.apache.hadoop.hive.ql.exec.UDF;
 import java.util.ArrayList;
 
 /**
- * Created by christopherleung on 1/30/18.
+ *
+ * @Deprecated
+ *
+ * Use GetAllYPDims instead
+ *
  */
+@Deprecated
 public class GetAllYPathsUDF extends UDF {
     ////public String[] evaluate(String xunit) {
      public String evaluate(String xunit) {
@@ -21,7 +26,14 @@ public class GetAllYPathsUDF extends UDF {
             }
 
             ////return ypathsList.toArray(  new String[ ypathsList.size() ] );
-            return String.join(",", ypathsList);
+           ///return String.join(",", ypathsList);
+            StringBuilder sb = new StringBuilder( ypathsList.get( 0) );
+            for(int i= 1; i <= ypathsList.size() -1 ; ++i) {
+                sb.append(",");
+                sb.append( ypathsList.get(i)) ;
+            }
+
+            return sb.toString();
 
         }  else {
             ///return  new String[ 0];

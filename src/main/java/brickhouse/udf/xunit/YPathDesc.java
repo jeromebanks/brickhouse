@@ -75,6 +75,12 @@ public class YPathDesc {
 				 if (kvArr.length != 2) {
 					 throw new IllegalArgumentException(" Invalid YPath "  + ypathStr);
 				 }
+				 if( kvArr[0].length() == 0) {
+				     throw new IllegalArgumentException(" Invalid YPath "  + ypathStr + " ; Invalid attribute name " + kvArr[0]);
+				 }
+				 if( kvArr[1].length() == 0) {
+					 throw new IllegalArgumentException(" Invalid YPath " + ypathStr + " ; Invalid attribute value " + kvArr[1]);
+				 }
 				 attrNames.add( kvArr[0]);
 				 attrValues.add( kvArr[1]);
 			 }
