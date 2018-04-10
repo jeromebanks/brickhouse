@@ -88,7 +88,7 @@ public class XUnitDesc {
 	      return this;
 		} else {
 	      List<YPathDesc> filteredYPaths = new ArrayList<YPathDesc>();
-	      for(int i=0; i< _ypaths.length -1; ++i) {
+	      for(int i=0; i<= _ypaths.length -1; ++i) {
 	        YPathDesc yp = _ypaths[i];
 	        if( ! yp.getDimName().equals( ypDim)) {
 	        	filteredYPaths.add( yp);
